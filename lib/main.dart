@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:taxi_reservation/screens/Admin/AddVehicleScreen.dart';
 import 'screens/home_screen.dart';
@@ -6,7 +7,9 @@ import 'screens/confirmation_screen.dart';
 import 'screens/ridehistory_screen.dart';
 import 'screens/ongoingreservations_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure binding is initialized
+  await Firebase.initializeApp(); // Initialize Firebase
   runApp(const TaxiReservationApp());
 }
 
