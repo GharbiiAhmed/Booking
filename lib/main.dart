@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taxi_reservation/screens/Admin/AddVehicleScreen.dart';
 import 'screens/home_screen.dart';
 import 'screens/booking_screen.dart';
 import 'screens/confirmation_screen.dart';
@@ -26,6 +27,7 @@ class TaxiReservationApp extends StatelessWidget {
         '/confirmation': (context) => const ConfirmationScreen(),
         '/history': (context) => const RideHistoryScreen(),
         '/ongoing': (context) => const OngoingReservationsScreen(),
+        '/addVehicule' : (context) => const AddVehicleScreen(),
       },
     );
   }

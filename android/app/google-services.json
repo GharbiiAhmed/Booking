@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "639775533103",
+    "project_id": "taxibooking-cf934",
+    "storage_bucket": "taxibooking-cf934.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:639775533103:android:a42d5c8a9db435cd837eda",
+        "android_client_info": {
+          "package_name": "com.example.taxi_reservation"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSVc2pF2rU1V32HlXIPjKUzaH8FrGuBug"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

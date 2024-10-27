@@ -44,6 +44,20 @@ class HomeScreen extends StatelessWidget {
                 Navigator.pop(context);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.directions_car),
+              title: const Text('add vehicule'),
+              onTap: () {
+                Navigator.pushNamed(context, '/addVehicule');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.directions_car),
+              title: const Text('add driver'),
+              onTap: () {
+                Navigator.pushNamed(context, '/addVehicule');
+              },
+            ),
           ],
         ),
       ),
