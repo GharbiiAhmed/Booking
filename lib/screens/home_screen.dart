@@ -37,13 +37,7 @@ class HomeScreen extends StatelessWidget {
                 Navigator.pushNamed(context, '/ongoing');
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.exit_to_app),
-              title: const Text('Exit'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
+
             ListTile(
               leading: const Icon(Icons.directions_car),
               title: const Text('add vehicule'),
@@ -55,7 +49,21 @@ class HomeScreen extends StatelessWidget {
               leading: const Icon(Icons.directions_car),
               title: const Text('add driver'),
               onTap: () {
-                Navigator.pushNamed(context, '/addVehicule');
+                Navigator.pushNamed(context, '/addDriver');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.directions_car),
+              title: const Text('Vehicules'),
+              onTap: () {
+                Navigator.pushNamed(context, '/AllVehicules');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.exit_to_app),
+              title: const Text('Exit'),
+              onTap: () {
+                Navigator.pop(context);
               },
             ),
           ],

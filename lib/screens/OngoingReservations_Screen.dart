@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:taxi_reservation/models/Reservation.dart';
 
 class OngoingReservationsScreen extends StatefulWidget {
   const OngoingReservationsScreen({super.key});
@@ -8,29 +10,17 @@ class OngoingReservationsScreen extends StatefulWidget {
 }
 
 class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
-  List<Map<String, String>> ongoingReservations = [
-    {
-      'pickup': 'Central Park',
-      'dropoff': 'Times Square',
-      'date': '2024-10-25',
-      'time': '10:00 AM',
-    },
-    {
-      'pickup': '5th Avenue',
-      'dropoff': 'Empire State Building',
-      'date': '2024-10-26',
-      'time': '2:30 PM',
-    },
-  ];
+  // Static user ID for filtering reservations
+  final String userId = 'static_user_id';  // Replace with the actual userId
 
-  void _cancelReservation(int index) {
-    setState(() {
-      ongoingReservations.removeAt(index);
+  // Method to cancel a reservation in Firestore
+  Future<void> _cancelReservation(String reservationId) async {
+    await FirebaseFirestore.instance.collection('Reservations').doc(reservationId).update({
+      'state': 'Canceled',
     });
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reservation canceled successfully.'),
-      ),
+      const SnackBar(content: Text('Reservation canceled successfully.')),
     );
   }
 
@@ -40,37 +30,60 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
       appBar: AppBar(
         title: const Text('Ongoing Reservations'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ongoingReservations.isEmpty
-            ? const Center(
-          child: Text(
-            'No ongoing reservations.',
-            style: TextStyle(fontSize: 18),
-          ),
-        )
-            : ListView.builder(
-          itemCount: ongoingReservations.length,
-          itemBuilder: (context, index) {
-            final reservation = ongoingReservations[index];
-            return Card(
-              child: ListTile(
-                leading: const Icon(Icons.local_taxi),
-                title: Text(
-                  '${reservation['pickup']} to ${reservation['dropoff']}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  'Date: ${reservation['date']} at ${reservation['time']}',
-                ),
-                trailing: ElevatedButton(
-                  onPressed: () => _cancelReservation(index),
-                  child: const Text('Cancel'),
-                ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('Reservations')
+            .where('userId', isEqualTo: userId)  // Filter by specific user
+            .where('state', isEqualTo: 'Ongoing')  // Filter ongoing reservations
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text(
+                'No ongoing reservations.',
+                style: TextStyle(fontSize: 18),
               ),
             );
-          },
-        ),
+          }
+
+          final reservations = snapshot.data!.docs
+              .map((doc) => Reservation.fromMap(doc.data() as Map<String, dynamic>))
+              .toList();
+
+          return ListView.builder(
+            itemCount: reservations.length,
+            itemBuilder: (context, index) {
+              final reservation = reservations[index];
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    leading: const Icon(Icons.local_taxi, color: Colors.blueAccent),
+                    title: Text(
+                      'Reservation with driver ${reservation.driverId}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'Date: ${reservation.reservationDate.toLocal().toString().split(' ')[0]} at ${reservation.reservationDate.toLocal().toString().split(' ')[1]}',
+                    ),
+                    trailing: ElevatedButton(
+                      onPressed: () => _cancelReservation(reservation.reservationId),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

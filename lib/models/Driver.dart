@@ -1,18 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Driver {
   final String driverId;
   final String name;
   final String licenseNumber;
   final String status;
-  final String vehicleId;
+  final String description;
+  final String profileImageUrl;
 
   Driver({
     required this.driverId,
     required this.name,
     required this.licenseNumber,
     required this.status,
-    required this.vehicleId,
+    required this.description,
+    required this.profileImageUrl,
   });
 
   factory Driver.fromMap(Map<String, dynamic> data) {
@@ -21,7 +21,8 @@ class Driver {
       name: data['name'] ?? '',
       licenseNumber: data['licenseNumber'] ?? '',
       status: data['status'] ?? '',
-      vehicleId: data['vehicleId'] ?? '',
+      description: data['description'] ?? '',
+      profileImageUrl: data['profileImageUrl'] ?? '',
     );
   }
 
@@ -31,7 +32,8 @@ class Driver {
       'name': name,
       'licenseNumber': licenseNumber,
       'status': status,
-      'vehicleId': vehicleId,
+      'description': description,
+      'profileImageUrl': profileImageUrl,
     };
   }
 }

@@ -14,7 +14,7 @@ class Reservation {
     required this.driverId,
     required this.vehicleId,
     required this.reservationDate,
-    required this.state
+    required this.state,
   });
 
   factory Reservation.fromMap(Map<String, dynamic> data) {
@@ -34,7 +34,7 @@ class Reservation {
       'userId': userId,
       'driverId': driverId,
       'vehicleId': vehicleId,
-      'reservationDate': Timestamp.fromDate(reservationDate),
+      'reservationDate': reservationDate,
       'state': state,
     };
   }
