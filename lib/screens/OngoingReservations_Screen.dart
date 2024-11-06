@@ -124,6 +124,11 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
   }
 
   Future<void> _generatePDF(Reservation reservation) async {
+    // Fetch necessary data
+    final driverName = await _fetchDriverName(reservation.driverId);
+    final vehiclePlate = await _fetchVehiclePlate(reservation.vehicleId!);
+    final userName = await _fetchUserName(userId);
+
     final pdf = pw.Document();
 
     pdf.addPage(pw.Page(
@@ -139,14 +144,13 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
                       color: PdfColors.blue)),
             ),
             pw.SizedBox(height: 20),
-
             pw.Table.fromTextArray(
               context: context,
               data: [
                 ['Reservation ID:', reservation.reservationId],
-                ['Name:', _fetchUserName(reservation.userId) ],
-                ['Driver Name:', _fetchDriverName(reservation.driverId)],
-                ['Vehicle Plate Number:', _fetchVehiclePlate(reservation.vehicleId!) ?? 'N/A'],
+                ['Name:', userName],
+                ['Driver Name:', driverName],
+                ['Vehicle Plate Number:', vehiclePlate],
                 ['Type:', reservation.type],
                 ['Pickup Location:', reservation.pickupLocation ?? 'N/A'],
                 ['Dropoff Location:', reservation.dropoffLocation ?? 'N/A'],
@@ -167,7 +171,6 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
               cellPadding: pw.EdgeInsets.all(5),
             ),
             pw.SizedBox(height: 20),
-
             pw.Align(
               alignment: pw.Alignment.bottomRight,
               child: pw.Text('Generated on ${DateTime.now().toLocal()}',
@@ -227,66 +230,111 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
               .map((doc) => Reservation.fromMap(doc.data() as Map<String, dynamic>))
               .toList();
 
-          return Expanded(
-            child: ListView.builder(
-              itemCount: reservations.length,
-              itemBuilder: (context, index) {
-                final reservation = reservations[index];
-                String displayText = '';
+          return ListView.builder(
+            itemCount: reservations.length,
+            itemBuilder: (context, index) {
+              final reservation = reservations[index];
+              String displayText = '';
 
-                if (reservation.type == 'Taxi') {
-                  displayText = 'From: ${reservation.pickupLocation} to: ${reservation.dropoffLocation} \n'
-                      'Reservation Time: ${formatDateTime(reservation.reservationDate)}';
-                } else if (reservation.type == 'Personal Vehicle') {
-                  displayText = 'Reservation Time: ${formatDateTime(reservation.reservationDate)} \n'
-                      'Start Time: ${formatDateTime(reservation.startDate)} \n'
-                      'End Time: ${formatDateTime(reservation.endDate)} \n'
-                      'Vehicle Plate Number: ${_fetchVehiclePlate(reservation.vehicleId!)}';
-                  if (reservation.driverId.isNotEmpty) {
-                    displayText += '\nDriver Name: ${_fetchDriverName(reservation.driverId)}';
-                  }
-                }
+              // Future for driver name
+              final driverNameFuture = reservation.driverId.isNotEmpty
+                  ? _fetchDriverName(reservation.driverId)
+                  : Future.value('No driver assigned');
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ListTile(
-                      leading: const Icon(Icons.local_taxi, color: Colors.blueAccent),
-                      title: Text(
-                        'Reservation ${reservation.reservationId}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(displayText),
-                      trailing: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => _cancelReservation(reservation.reservationId),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
+              // Future for vehicle plate
+              final vehiclePlateFuture = reservation.vehicleId != null
+                  ? _fetchVehiclePlate(reservation.vehicleId!)
+                  : Future.value('No vehicle assigned');
+
+              return Column(
+                children: [
+                  FutureBuilder<String>(
+                    future: driverNameFuture,
+                    builder: (context, driverSnapshot) {
+                      if (driverSnapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      }
+
+                      if (!driverSnapshot.hasData) {
+                        return const Text('Error loading driver.');
+                      }
+
+                      final driverName = driverSnapshot.data!;
+
+                      // FutureBuilder for vehicle plate
+                      return FutureBuilder<String>(
+                        future: vehiclePlateFuture,
+                        builder: (context, vehicleSnapshot) {
+                          if (vehicleSnapshot.connectionState == ConnectionState.waiting) {
+                            return const CircularProgressIndicator();
+                          }
+
+                          if (!vehicleSnapshot.hasData) {
+                            return const Text('Error loading vehicle.');
+                          }
+
+                          final vehiclePlate = vehicleSnapshot.data!;
+
+                          if (reservation.type == 'Taxi') {
+                            displayText = 'From: ${reservation.pickupLocation} to: ${reservation.dropoffLocation} \n'
+                                'Reservation Time: ${formatDateTime(reservation.reservationDate)}';
+                          } else if (reservation.type == 'Personal Vehicle') {
+                            displayText = 'Reservation Time: ${formatDateTime(reservation.reservationDate)} \n'
+                                'Start Time: ${formatDateTime(reservation.startDate)} \n'
+                                'End Time: ${formatDateTime(reservation.endDate)} \n'
+                                'Vehicle Plate Number: ${vehiclePlate}';
+                            if (reservation.driverId.isNotEmpty) {
+                              displayText += '\nDriver Name: ${driverName}';
+                            }
+                          }
+
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                children: [
+                                  ListTile(
+                                    leading: const Icon(Icons.local_taxi, color: Colors.blueAccent),
+                                    title: Text(
+                                      'Reservation ${reservation.reservationId}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Text(displayText),
+                                  ),
+                                  const SizedBox(height: 8), // Space between card content and buttons
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: () => _cancelReservation(reservation.reservationId),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.redAccent,
+                                        ),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () => _generatePDF(reservation),
+                                        child: const Icon(Icons.download),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              child: const Text('Cancel'),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => _generatePDF(reservation),
-                              child: const Icon(Icons.download),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                          );
+                        },
+                      );
+                    },
                   ),
-                );
-              },
-            ),
+                ],
+              );
+            },
           );
         },
       ),
     );
   }
+
+
 }
