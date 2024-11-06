@@ -2,6 +2,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+
 
 import '../models/Reservation.dart';
 
@@ -31,8 +33,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   List<Map<String, dynamic>> _drivers = [];
   List<Map<String, dynamic>> _carDetails = [];
-
-
+  static const String ACCESS_TOKEN = String.fromEnvironment("ACCESS_TOKEN");
 
   @override
   void initState() {
@@ -40,6 +41,8 @@ class _BookingScreenState extends State<BookingScreen> {
     _fetchCarDetails();
     _fetchDriverDetails();
   }
+
+
 
   Future<void> _submitBooking() async {
     String driverId = '';
@@ -76,7 +79,6 @@ class _BookingScreenState extends State<BookingScreen> {
         .doc(_bookingData.reservationId)
         .set(_bookingData.toMap());
   }
-
 
   Future<void> _fetchCarDetails() async {
     final carCollection = FirebaseFirestore.instance.collection('Vehicles');

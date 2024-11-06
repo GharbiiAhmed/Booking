@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:taxi_reservation/screens/Admin/AllDriversScreen.dart';
 import 'package:taxi_reservation/screens/Admin/AllVehiculesScreen.dart';
+import 'package:taxi_reservation/screens/sub.dart';
 import 'screens/home_screen.dart';
 import 'screens/booking_screen.dart';
 import 'screens/confirmation_screen.dart';
@@ -42,6 +43,7 @@ class TaxiReservationApp extends StatelessWidget {
         '/addDriver' : (context) => const AddDriverScreen(),
         '/AllVehicules' : (context) => const AllVehiculesScreen(),
         '/AllDrivers' : (context) => const AllDriversScreen(),
+        '/Map' : (context) => MapsPage()
 
       },
     );
