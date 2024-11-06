@@ -60,6 +60,13 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.directions_car),
+              title: const Text('Drivers'),
+              onTap: () {
+                Navigator.pushNamed(context, '/AllDrivers');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.exit_to_app),
               title: const Text('Exit'),
               onTap: () {

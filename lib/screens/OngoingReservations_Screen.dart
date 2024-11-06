@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:taxi_reservation/models/Reservation.dart';
 
 class OngoingReservationsScreen extends StatefulWidget {
@@ -10,18 +11,54 @@ class OngoingReservationsScreen extends StatefulWidget {
 }
 
 class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
-  // Static user ID for filtering reservations
-  final String userId = 'static_user_id';  // Replace with the actual userId
+  final String userId = '1';
 
-  // Method to cancel a reservation in Firestore
   Future<void> _cancelReservation(String reservationId) async {
-    await FirebaseFirestore.instance.collection('Reservations').doc(reservationId).update({
-      'state': 'Canceled',
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Reservation canceled successfully.')),
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Reservation'),
+        content: const Text('Are you sure you want to cancel this reservation?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
     );
+
+    if (confirm == true) {
+      try {
+        final docRef = FirebaseFirestore.instance.collection('reservations').doc(reservationId);
+        final docSnapshot = await docRef.get();
+
+        if (docSnapshot.exists) {
+          await docRef.update({'state': 'Canceled'});
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Reservation canceled successfully.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Reservation not found.')),
+          );
+        }
+      } catch (e) {
+        print("Error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to cancel reservation.')),
+        );
+      }
+    }
+  }
+
+
+  String formatDateTime(DateTime? dateTime) {
+    return DateFormat('yyyy-MM-dd – kk:mm').format(dateTime!);
   }
 
   @override
@@ -32,9 +69,9 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('Reservations')
-            .where('userId', isEqualTo: userId)  // Filter by specific user
-            .where('state', isEqualTo: 'Ongoing')  // Filter ongoing reservations
+            .collection('reservations')
+            .where('userId', isEqualTo: userId)
+            .where('state', isEqualTo: 'OnGoing')
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -58,6 +95,21 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
             itemCount: reservations.length,
             itemBuilder: (context, index) {
               final reservation = reservations[index];
+              String displayText = '';
+
+              if (reservation.type == 'Taxi') {
+                displayText = 'From: ${reservation.pickupLocation} to: ${reservation.dropoffLocation} \n'
+                    'Reservation Time: ${formatDateTime(reservation.reservationDate)}';
+              } else if (reservation.type == 'Personal Vehicle') {
+                displayText = 'Reservation Time: ${formatDateTime(reservation.reservationDate)} \n'
+                    'Start Time: ${formatDateTime(reservation.startDate)} \n'
+                    'End Time: ${formatDateTime(reservation.endDate)} \n'
+                    'Vehicle Plate Number: ${reservation.vehicleId}';
+                if (reservation.driverId.isNotEmpty) {
+                  displayText += '\nDriver Name: ${reservation.driverId}';
+                }
+              }
+
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Padding(
@@ -65,12 +117,10 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
                   child: ListTile(
                     leading: const Icon(Icons.local_taxi, color: Colors.blueAccent),
                     title: Text(
-                      'Reservation with driver ${reservation.driverId}',
+                      'Reservation ${reservation.reservationId}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    subtitle: Text(
-                      'Date: ${reservation.reservationDate.toLocal().toString().split(' ')[0]} at ${reservation.reservationDate.toLocal().toString().split(' ')[1]}',
-                    ),
+                    subtitle: Text(displayText),
                     trailing: ElevatedButton(
                       onPressed: () => _cancelReservation(reservation.reservationId),
                       style: ElevatedButton.styleFrom(

@@ -1,5 +1,9 @@
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+import '../models/Reservation.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -14,45 +18,93 @@ class _BookingScreenState extends State<BookingScreen> {
   DateTime? _endDate;
   TimeOfDay? _selectedTime;
   String? _selectedCarType;
-  String? _selectedVehicleType;
+  String _selectedVehicleType = '';
   bool? _withDriver;
   String? _selectedDriver;
-  Map<String, String>? _selectedDriverDetails;
-  Map<String, String>? _selectedCarDetails; // Change to Map<String, String>?
+  Map<String, dynamic>? _selectedDriverDetails;
+  Map<String, dynamic>? _selectedCarDetails;
 
-  final DateFormat _dateFormatter = DateFormat('yyyy-MM-dd');
+  final DateFormat _dateFormatter = DateFormat('dd-MM-yyyy');
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _dropoffController = TextEditingController();
   final TextEditingController _carPickupLocationController = TextEditingController();
 
-  final List<Map<String, String>> _drivers = [
-    {'name': 'John Doe', 'image': 'assets/john_doe.png', 'details': 'Experienced driver with 5 years of service.'},
-    {'name': 'Jane Smith', 'image': 'assets/jane_smith.png', 'details': 'Friendly and punctual driver.'},
-    {'name': 'Bob Johnson', 'image': 'assets/bob_johnson.png', 'details': 'Knows the city well, great ratings.'},
-  ];
+  List<Map<String, dynamic>> _drivers = [];
+  List<Map<String, dynamic>> _carDetails = [];
 
-  final List<Map<String, String>> _carDetails = [
+  @override
+  void initState() {
+    super.initState();
+    _fetchCarDetails();
+    _fetchDriverDetails();
+  }
+
+  Future<void> _submitBooking() async {
+    String driverId = '';
+    String? vehicleId;
+    if (_selectedDriverDetails != null )
     {
-      'name': 'Sedan',
-      'image': 'assets/sedan.png',
-      'details': 'A comfortable car for city driving.'
-    },
-    {
-      'name': 'SUV',
-      'image': 'assets/suv.png',
-      'details': 'Spacious and perfect for off-road adventures.'
-    },
-    {
-      'name': 'Luxury',
-      'image': 'assets/luxury.png',
-      'details': 'A premium vehicle for a luxurious experience.'
-    },
-    {
-      'name': 'Van',
-      'image': 'assets/van.png',
-      'details': 'Ideal for larger groups or families.'
-    },
-  ];
+      driverId = _selectedDriverDetails!['id'];
+
+    } else {
+      print('Driver not selected');
+    }
+    if(_selectedCarDetails != null)
+      {
+        vehicleId = _selectedCarDetails!['id'];
+      }
+    else {
+      print('vehicle not selected');
+    }
+    final _bookingData = Reservation(
+      reservationId : FirebaseFirestore.instance.collection('reservations').doc().id,
+      userId: '1',
+      driverId: driverId,
+      vehicleId: vehicleId,
+      reservationDate: DateTime.now(),
+      state: 'OnGoing',
+      type: _selectedVehicleType,
+      pickupLocation: _pickupController.text,
+      dropoffLocation: _dropoffController.text,
+      startDate: _startDate,
+      endDate: _endDate,
+      pickupTime: _selectedTime?.format(context),
+    );
+    await FirebaseFirestore.instance.collection('reservations')
+        .doc(_bookingData.reservationId)
+        .set(_bookingData.toMap());
+  }
+
+
+  Future<void> _fetchCarDetails() async {
+    final carCollection = FirebaseFirestore.instance.collection('Vehicles');
+    final carSnapshots = await carCollection.get();
+    setState(() {
+      _carDetails = carSnapshots.docs.map((doc) {
+        return {
+          'id': doc['vehicleId'],
+          'name': doc['model'],
+          'image': doc['imageUrl'],
+          'details': doc['plateNumber']+' ' + doc['type'],
+        };
+      }).toList();
+    });
+  }
+
+  Future<void> _fetchDriverDetails() async {
+    final driverCollection = FirebaseFirestore.instance.collection('Drivers');
+    final driverSnapshots = await driverCollection.get();
+    setState(() {
+      _drivers = driverSnapshots.docs.map((doc) {
+        return {
+          'id': doc['driverId'],
+          'name': doc['name'],
+          'image': doc['profileImageUrl'],
+          'description': doc['description'],
+        };
+      }).toList();
+    });
+  }
 
   Future<void> _selectDate(BuildContext context, {bool isStart = false, bool isEnd = false}) async {
     final DateTime? picked = await showDatePicker(
@@ -104,7 +156,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 onTap: () {
                   setState(() {
                     _selectedCarType = car['name'];
-                    _selectedCarDetails = car; // Store selected car details
+                    _selectedCarDetails = car;
                   });
                 },
                 child: Container(
@@ -116,7 +168,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                   child: Column(
                     children: [
-                      Image.asset(car['image']!, height: 60), // Car type image
+                      Image.asset(car['image']!, height: 60),
                       const SizedBox(height: 8),
                       Text(
                         car['name']!,
@@ -130,7 +182,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         onTap: () {
                           setState(() {
                             _selectedCarType = car['name'];
-                            _selectedCarDetails = car; // Store selected car details
+                            _selectedCarDetails = car;
                           });
                         },
                         child: Text(
@@ -149,7 +201,7 @@ class _BookingScreenState extends State<BookingScreen> {
             }).toList(),
           ),
         ),
-        if (_selectedCarDetails != null) // Display car type details if selected
+        if (_selectedCarDetails != null)
           Padding(
             padding: const EdgeInsets.only(top: 16.0),
             child: Column(
@@ -160,7 +212,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                Text(_selectedCarDetails!['details']!), // Show car type details
+                Text(_selectedCarDetails!['details']!),
               ],
             ),
           ),
@@ -186,7 +238,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 onTap: () {
                   setState(() {
                     _selectedDriver = driver['name'];
-                    _selectedDriverDetails = driver; // Store selected driver details
+                    _selectedDriverDetails = driver;
                   });
                 },
                 child: Container(
@@ -200,7 +252,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     children: [
                       CircleAvatar(
                         backgroundImage: AssetImage(driver['image']!),
-                        radius: 40, // Larger image
+                        radius: 40,
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -215,7 +267,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         onTap: () {
                           setState(() {
                             _selectedDriver = driver['name'];
-                            _selectedDriverDetails = driver; // Store selected driver details
+                            _selectedDriverDetails = driver;
                           });
                         },
                         child: Text(
@@ -234,7 +286,7 @@ class _BookingScreenState extends State<BookingScreen> {
             }).toList(),
           ),
         ),
-        if (_selectedDriverDetails != null) // Display driver details if selected
+        if (_selectedDriverDetails != null)
           Padding(
             padding: const EdgeInsets.only(top: 16.0),
             child: Column(
@@ -245,7 +297,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                Text(_selectedDriverDetails!['details']!), // Show driver details
+                Text(_selectedDriverDetails!['description']!),
               ],
             ),
           ),
@@ -412,7 +464,7 @@ class _BookingScreenState extends State<BookingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Book a Vehicle')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,7 +477,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   groupValue: _selectedVehicleType,
                   onChanged: (String? value) {
                     setState(() {
-                      _selectedVehicleType = value;
+                      _selectedVehicleType = value!;
                     });
                   },
                 ),
@@ -435,7 +487,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   groupValue: _selectedVehicleType,
                   onChanged: (String? value) {
                     setState(() {
-                      _selectedVehicleType = value;
+                      _selectedVehicleType = value!;
                     });
                   },
                 ),
@@ -446,15 +498,24 @@ class _BookingScreenState extends State<BookingScreen> {
             if (_selectedVehicleType == 'Personal Vehicle') _buildPersonalVehicleFields(),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
-                // Booking confirmation logic
-                // You can display a dialog or navigate to another screen to confirm the booking
+              onPressed: () async {
+                try {
+                  _submitBooking();
+
+                  Navigator.pushNamed(context, '/confirmation');
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to book vehicle: $e')),
+                  );
+                }
               },
               child: const Text('Confirm Booking'),
             ),
+
           ],
         ),
       ),
     );
   }
+
 }

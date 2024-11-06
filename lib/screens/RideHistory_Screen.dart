@@ -5,8 +5,7 @@ import 'package:taxi_reservation/models/Reservation.dart';
 class RideHistoryScreen extends StatelessWidget {
   const RideHistoryScreen({super.key});
 
-  // Static user ID for filtering reservations
-  final String userId = '1';  // Replace with the actual userId
+  final String userId = '1';
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +17,9 @@ class RideHistoryScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection('Reservations')
-              .where('userId', isEqualTo: userId)  // Filter by specific user
-              .where('state', isEqualTo: 'Completed')  // Filter completed reservations
+              .collection('reservations')
+              .where('userId', isEqualTo: userId)
+              .where('state', isEqualTo: 'Completed')
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -44,10 +43,28 @@ class RideHistoryScreen extends StatelessWidget {
               itemCount: completedReservations.length,
               itemBuilder: (context, index) {
                 final reservation = completedReservations[index];
+
+                String title;
+                String subtitle;
+
+                if (reservation.type == 'Taxi') {
+                  title = 'Reservation: ${reservation.reservationId ?? 'N/A'}';
+                  subtitle = 'Pick-up: ${reservation.pickupLocation ?? 'N/A'}\nDrop-off: ${reservation.dropoffLocation ?? 'N/A'}\nDate: ${reservation.reservationDate}';
+                } else if (reservation.type == 'Personal Vehicle' && reservation.driverId == '') {
+                  title = 'Reservation: ${reservation.reservationId ?? 'N/A'}';
+                  subtitle = 'Vehicle Plate: ${reservation.vehicleId ?? 'N/A'}\nStart: ${reservation.startDate ?? 'N/A'}\nEnd: ${reservation.endDate ?? 'N/A'}\nDate: ${reservation.reservationDate}';
+                } else if (reservation.type == 'Personal Vehicle' && reservation.driverId != '') {
+                  title = 'Reservation: ${reservation.reservationId ?? 'N/A'}';
+                  subtitle = 'Driver Name: ${reservation.driverId}\nStart: ${reservation.startDate ?? 'N/A'}\nEnd: ${reservation.endDate ?? 'N/A'}\nDate: ${reservation.reservationDate}';
+                } else {
+                  title = 'Unknown Reservation';
+                  subtitle = 'No details available';
+                }
+
                 return ListTile(
                   leading: const Icon(Icons.local_taxi, color: Colors.blueAccent),
-                  title: Text('Pick-up: ${reservation.driverId}'),
-                  subtitle: Text('Drop-off: ${reservation.vehicleId}'),
+                  title: Text(title),
+                  subtitle: Text(subtitle),
                   trailing: const Text('Completed', style: TextStyle(color: Colors.green)),
                 );
               },

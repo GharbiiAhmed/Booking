@@ -1,23 +1,35 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:taxi_reservation/models/Driver.dart';
 
-class AddDriverScreen extends StatefulWidget {
-  const AddDriverScreen({super.key});
+class ModifyDriverScreen extends StatefulWidget {
+  final Driver driver;
+
+  const ModifyDriverScreen({super.key, required this.driver});
 
   @override
-  _AddDriverScreenState createState() => _AddDriverScreenState();
+  _ModifyDriverScreenState createState() => _ModifyDriverScreenState();
 }
 
-class _AddDriverScreenState extends State<AddDriverScreen> {
+class _ModifyDriverScreenState extends State<ModifyDriverScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _licenseNumberController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _licenseNumberController;
+  late TextEditingController _descriptionController;
   String? _selectedStatus;
   String _profileImageUrl = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.driver.name);
+    _licenseNumberController = TextEditingController(text: widget.driver.licenseNumber);
+    _descriptionController = TextEditingController(text: widget.driver.description);
+    _selectedStatus = widget.driver.status;
+    _profileImageUrl = widget.driver.profileImageUrl;
+  }
 
   Future<void> _pickImage() async {
     try {
@@ -73,7 +85,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
     }
   }
 
-  Future<void> _addDriver() async {
+  Future<void> _updateDriver() async {
     if (_formKey.currentState!.validate()) {
       if (_profileImageUrl.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -83,7 +95,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
       }
 
       final driver = Driver(
-        driverId: FirebaseFirestore.instance.collection('Drivers').doc().id,
+        driverId: widget.driver.driverId,
         name: _nameController.text,
         licenseNumber: _licenseNumberController.text,
         description: _descriptionController.text,
@@ -94,19 +106,28 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
       await FirebaseFirestore.instance
           .collection('Drivers')
           .doc(driver.driverId)
-          .set(driver.toMap());
+          .update(driver.toMap());
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Driver added successfully!')),
+      // Show success popup
+      showDialog(
+        context: context,
+        barrierDismissible: false,  // Prevent dismissing by tapping outside
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Success'),
+            content: Text('Driver updated successfully!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.of(context).pop(); // Optionally, navigate back to previous screen
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
       );
-
-      _nameController.clear();
-      _licenseNumberController.clear();
-      _descriptionController.clear();
-      setState(() {
-        _selectedStatus = null;
-        _profileImageUrl = '';
-      });
     }
   }
 
@@ -122,7 +143,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Driver'),
+        title: Text('Modify Driver'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -193,8 +214,8 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: _addDriver,
-                  child: Text('Add Driver'),
+                  onPressed: _updateDriver,
+                  child: Text('Update Driver'),
                 ),
               ],
             ),

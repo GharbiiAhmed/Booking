@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:taxi_reservation/screens/Admin/AllDriversScreen.dart';
 import 'package:taxi_reservation/screens/Admin/AllVehiculesScreen.dart';
 import 'package:taxi_reservation/screens/Admin/ModifyVehicleScreen.dart';
 import 'screens/home_screen.dart';
@@ -37,6 +38,8 @@ class TaxiReservationApp extends StatelessWidget {
         '/addVehicule' : (context) => const AddVehicleScreen(),
         '/addDriver' : (context) => const AddDriverScreen(),
         '/AllVehicules' : (context) => const AllVehiculesScreen(),
+        '/AllDrivers' : (context) => const AllDriversScreen(),
+
       },
     );
   }

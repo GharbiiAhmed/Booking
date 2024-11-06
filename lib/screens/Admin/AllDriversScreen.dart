@@ -1,34 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:taxi_reservation/models/Vehicle.dart';
-import 'ModifyVehicleScreen.dart';
+import '../../models/Driver.dart';
+import 'ModifyDriverScreen.dart';
 
-class AllVehiculesScreen extends StatelessWidget {
-  const AllVehiculesScreen({super.key});
+class AllDriversScreen extends StatelessWidget {
+  const AllDriversScreen({super.key});
 
-  Future<List<Vehicle>> _fetchVehicles() async {
-    final querySnapshot = await FirebaseFirestore.instance.collection('Vehicles').get();
-    return querySnapshot.docs.map((doc) => Vehicle.fromMap(doc.data())).toList();
+  Future<List<Driver>> _fetchDrivers() async {
+    final querySnapshot = await FirebaseFirestore.instance.collection('Drivers').get();
+    return querySnapshot.docs.map((doc) => Driver.fromMap(doc.data())).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Vehicles'),
+        title: const Text('All Drivers'),
       ),
-      body: FutureBuilder<List<Vehicle>>(
-        future: _fetchVehicles(),
+      body: FutureBuilder<List<Driver>>(
+        future: _fetchDrivers(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return const Center(child: Text('Error loading vehicles'));
+            return const Center(child: Text('Error loading drivers'));
           }
-          final vehicles = snapshot.data!;
-          if (vehicles.isEmpty) {
-            return const Center(child: Text('No vehicles available'));
+          final drivers = snapshot.data!;
+          if (drivers.isEmpty) {
+            return const Center(child: Text('No drivers available'));
           }
           return GridView.builder(
             padding: const EdgeInsets.all(8.0),
@@ -38,15 +38,15 @@ class AllVehiculesScreen extends StatelessWidget {
               crossAxisSpacing: 10.0,
               childAspectRatio: 3 / 4,
             ),
-            itemCount: vehicles.length,
+            itemCount: drivers.length,
             itemBuilder: (context, index) {
-              final vehicle = vehicles[index];
+              final driver = drivers[index];
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ModifyVehicleScreen(vehicle: vehicle),
+                      builder: (context) => ModifyDriverScreen(driver: driver),
                     ),
                   );
                 },
@@ -60,28 +60,23 @@ class AllVehiculesScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
-                        child: vehicle.imageUrl.isNotEmpty
-                            ? Image.asset(vehicle.imageUrl, fit: BoxFit.cover)
-                            : Icon(Icons.directions_car, size: 80, color: Colors.grey),
+                        child: driver.profileImageUrl.isNotEmpty
+                            ? Image.asset(driver.profileImageUrl, fit: BoxFit.cover)
+                            : Icon(Icons.person, size: 80, color: Colors.grey),
                       ),
                       const SizedBox(height: 8.0),
                       Text(
-                        vehicle.plateNumber,
+                        driver.name,
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4.0),
                       Text(
-                        vehicle.model,
+                        driver.licenseNumber,
                         style: const TextStyle(fontSize: 14, color: Colors.black54),
                       ),
                       const SizedBox(height: 4.0),
                       Text(
-                        'Type: ${vehicle.type}',
-                        style: const TextStyle(fontSize: 14, color: Colors.black54),
-                      ),
-                      const SizedBox(height: 4.0),
-                      Text(
-                        'Status: ${vehicle.status}',
+                        'Status: ${driver.status}',
                         style: const TextStyle(fontSize: 14, color: Colors.black54),
                       ),
                     ],

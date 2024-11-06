@@ -1,3 +1,6 @@
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Vehicle {
   final String vehicleId;
   final String plateNumber;
@@ -17,7 +20,7 @@ class Vehicle {
 
   factory Vehicle.fromMap(Map<String, dynamic> data) {
     return Vehicle(
-      vehicleId: data['vehicleId'] ?? '',
+      vehicleId: data['vehicleId'] ?? FirebaseFirestore.instance.collection('drivers').doc(),
       plateNumber: data['plateNumber'] ?? '',
       type: data['type'] ?? '',
       status: data['status'] ?? '',

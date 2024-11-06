@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:io';
+import 'package:flutter/services.dart';
+
+import '../../models/Vehicle.dart';
 
 class AddVehicleScreen extends StatefulWidget {
   const AddVehicleScreen({super.key});
@@ -17,9 +19,8 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   final TextEditingController _modelController = TextEditingController();
   String _selectedType = 'Car';
   String _selectedStatus = 'Available';
-  File? _selectedImage;
   String? _imageUrl;
-  bool _isUploading = false; // To manage loading state
+  bool _isUploading = false;
 
   @override
   void dispose() {
@@ -29,49 +30,74 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   }
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
-    }
-  }
-
-  Future<void> _uploadImage() async {
-    if (_selectedImage == null) return;
-
-    setState(() => _isUploading = true); // Start loading state
     try {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('vehicle_images')
-          .child('${_plateNumberController.text}_${DateTime.now().toIso8601String()}.jpg');
+      final assetManifest = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = json.decode(assetManifest);
 
-      await storageRef.putFile(_selectedImage!);
-      _imageUrl = await storageRef.getDownloadURL();
+      final assetList = manifestMap.keys
+          .where((path) => path.contains('lib/resources/cars/') &&
+          (path.endsWith('.png') || path.endsWith('.jpg')))
+          .toList();
+
+      if (assetList.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No images found in resources/cars')),
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Select an image'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: assetList.map((assetPath) {
+                  final decodedPath = Uri.decodeFull(assetPath);
+                  return ListTile(
+                    leading: Image.asset(
+                      decodedPath,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    ),
+                    title: Text(decodedPath.split('/').last),
+                    onTap: () {
+                      setState(() {
+                        _imageUrl = decodedPath;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+          );
+        },
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to upload image: $e')),
+        SnackBar(content: Text('Error loading images: $e')),
       );
-    } finally {
-      setState(() => _isUploading = false); // End loading state
     }
   }
+
 
   Future<void> _addVehicle() async {
     if (_formKey.currentState!.validate()) {
-      await _uploadImage(); // Upload image before adding vehicle
-
-      final vehicle = {
-        'plateNumber': _plateNumberController.text,
-        'type': _selectedType,
-        'status': _selectedStatus,
-        'model': _modelController.text,
-        'imageUrl': _imageUrl ?? '',
-      };
+      final vehicle = Vehicle(
+        vehicleId: FirebaseFirestore.instance.collection('Vehicle').doc().id,
+        plateNumber: _plateNumberController.text,
+        type: _selectedType,
+        status: _selectedStatus,
+        model: _modelController.text,
+        imageUrl: _imageUrl ?? '',
+      );
 
       try {
-        await FirebaseFirestore.instance.collection('Vehicles').add(vehicle);
+        await FirebaseFirestore.instance.collection('Vehicles').doc(vehicle.vehicleId).set(vehicle.toMap());
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -87,7 +113,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         );
         _formKey.currentState!.reset();
         setState(() {
-          _selectedImage = null;
           _imageUrl = null;
         });
       } catch (e) {
@@ -137,12 +162,12 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 value!.isEmpty ? 'Please enter model' : null,
               ),
               SizedBox(height: 20),
-              _selectedImage != null
+              _imageUrl != null
                   ? Column(
                 children: [
-                  Image.file(_selectedImage!, height: 100, width: 100, fit: BoxFit.cover),
+                  Image.asset(_imageUrl!, height: 100, width: 100, fit: BoxFit.cover),
                   TextButton(
-                    onPressed: () => setState(() => _selectedImage = null),
+                    onPressed: () => setState(() => _imageUrl = null),
                     child: Text('Clear Image'),
                   ),
                 ],

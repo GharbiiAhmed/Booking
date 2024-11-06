@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Driver {
   final String driverId;
   final String name;
@@ -17,7 +19,7 @@ class Driver {
 
   factory Driver.fromMap(Map<String, dynamic> data) {
     return Driver(
-      driverId: data['driverId'] ?? '',
+      driverId: data['driverId'] ?? FirebaseFirestore.instance.collection('drivers').doc(),
       name: data['name'] ?? '',
       licenseNumber: data['licenseNumber'] ?? '',
       status: data['status'] ?? '',
