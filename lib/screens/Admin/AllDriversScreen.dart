@@ -3,12 +3,48 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/Driver.dart';
 import 'ModifyDriverScreen.dart';
 
-class AllDriversScreen extends StatelessWidget {
+class AllDriversScreen extends StatefulWidget {
   const AllDriversScreen({super.key});
 
-  Future<List<Driver>> _fetchDrivers() async {
+  @override
+  _AllDriversScreenState createState() => _AllDriversScreenState();
+}
+
+class _AllDriversScreenState extends State<AllDriversScreen> {
+  TextEditingController _searchController = TextEditingController();
+  List<Driver> _allDrivers = [];
+  List<Driver> _filteredDrivers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDrivers();
+    _searchController.addListener(_filterDrivers);
+  }
+
+  Future<void> _fetchDrivers() async {
     final querySnapshot = await FirebaseFirestore.instance.collection('Drivers').get();
-    return querySnapshot.docs.map((doc) => Driver.fromMap(doc.data())).toList();
+    final drivers = querySnapshot.docs.map((doc) => Driver.fromMap(doc.data())).toList();
+    setState(() {
+      _allDrivers = drivers;
+      _filteredDrivers = drivers;
+    });
+  }
+
+  void _filterDrivers() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredDrivers = _allDrivers.where((driver) {
+        return driver.name.toLowerCase().contains(query) ||
+            driver.licenseNumber.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -16,31 +52,41 @@ class AllDriversScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('All Drivers'),
-      ),
-      body: FutureBuilder<List<Driver>>(
-        future: _fetchDrivers(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const Center(child: Text('Error loading drivers'));
-          }
-          final drivers = snapshot.data!;
-          if (drivers.isEmpty) {
-            return const Center(child: Text('No drivers available'));
-          }
-          return GridView.builder(
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Padding(
             padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search drivers...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                  borderSide: BorderSide(color: Colors.blueAccent),
+                ),
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: _filteredDrivers.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 10.0,
               crossAxisSpacing: 10.0,
               childAspectRatio: 3 / 4,
             ),
-            itemCount: drivers.length,
+            itemCount: _filteredDrivers.length,
             itemBuilder: (context, index) {
-              final driver = drivers[index];
+              final driver = _filteredDrivers[index];
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -84,8 +130,8 @@ class AllDriversScreen extends StatelessWidget {
                 ),
               );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
   }

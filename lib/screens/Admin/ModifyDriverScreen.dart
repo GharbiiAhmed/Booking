@@ -108,10 +108,9 @@ class _ModifyDriverScreenState extends State<ModifyDriverScreen> {
           .doc(driver.driverId)
           .update(driver.toMap());
 
-      // Show success popup
       showDialog(
         context: context,
-        barrierDismissible: false,  // Prevent dismissing by tapping outside
+        barrierDismissible: false,
         builder: (context) {
           return AlertDialog(
             title: Text('Success'),
@@ -119,8 +118,8 @@ class _ModifyDriverScreenState extends State<ModifyDriverScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                  Navigator.of(context).pop(); // Optionally, navigate back to previous screen
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
                 },
                 child: Text('OK'),
               ),

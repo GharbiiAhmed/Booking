@@ -3,12 +3,49 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:taxi_reservation/models/Vehicle.dart';
 import 'ModifyVehicleScreen.dart';
 
-class AllVehiculesScreen extends StatelessWidget {
+class AllVehiculesScreen extends StatefulWidget {
   const AllVehiculesScreen({super.key});
 
-  Future<List<Vehicle>> _fetchVehicles() async {
+  @override
+  _AllVehiculesScreenState createState() => _AllVehiculesScreenState();
+}
+
+class _AllVehiculesScreenState extends State<AllVehiculesScreen> {
+  TextEditingController _searchController = TextEditingController();
+  List<Vehicle> _allVehicles = [];
+  List<Vehicle> _filteredVehicles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchVehicles();
+    _searchController.addListener(_filterVehicles);
+  }
+
+  Future<void> _fetchVehicles() async {
     final querySnapshot = await FirebaseFirestore.instance.collection('Vehicles').get();
-    return querySnapshot.docs.map((doc) => Vehicle.fromMap(doc.data())).toList();
+    final vehicles = querySnapshot.docs.map((doc) => Vehicle.fromMap(doc.data())).toList();
+    setState(() {
+      _allVehicles = vehicles;
+      _filteredVehicles = vehicles;
+    });
+  }
+
+  void _filterVehicles() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredVehicles = _allVehicles.where((vehicle) {
+        return vehicle.plateNumber.toLowerCase().contains(query) ||
+            vehicle.model.toLowerCase().contains(query) ||
+            vehicle.type.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -16,31 +53,41 @@ class AllVehiculesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('All Vehicles'),
-      ),
-      body: FutureBuilder<List<Vehicle>>(
-        future: _fetchVehicles(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const Center(child: Text('Error loading vehicles'));
-          }
-          final vehicles = snapshot.data!;
-          if (vehicles.isEmpty) {
-            return const Center(child: Text('No vehicles available'));
-          }
-          return GridView.builder(
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Padding(
             padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search vehicles...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                  borderSide: BorderSide(color: Colors.blueAccent),
+                ),
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: _filteredVehicles.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 10.0,
               crossAxisSpacing: 10.0,
               childAspectRatio: 3 / 4,
             ),
-            itemCount: vehicles.length,
+            itemCount: _filteredVehicles.length,
             itemBuilder: (context, index) {
-              final vehicle = vehicles[index];
+              final vehicle = _filteredVehicles[index];
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -89,8 +136,8 @@ class AllVehiculesScreen extends StatelessWidget {
                 ),
               );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
   }

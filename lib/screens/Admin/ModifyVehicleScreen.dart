@@ -99,7 +99,6 @@ class _ModifyVehicleScreenState extends State<ModifyVehicleScreen> {
 
   Future<void> _updateVehicle() async {
     if (_formKey.currentState!.validate()) {
-      // If an image is selected, upload it
       if (_selectedImagePath != null) await _uploadImage();
 
       final vehicle = Vehicle(
@@ -112,10 +111,8 @@ class _ModifyVehicleScreenState extends State<ModifyVehicleScreen> {
       );
 
       try {
-        // Update vehicle details in Firestore
         await FirebaseFirestore.instance.collection('Vehicles').doc(vehicle.vehicleId).set(vehicle.toMap());
 
-        // Show success popup dialog
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -123,7 +120,7 @@ class _ModifyVehicleScreenState extends State<ModifyVehicleScreen> {
             content: Text('Vehicle updated successfully!'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(), // Close dialog
+                onPressed: () => Navigator.of(context).pop(),
                 child: Text('OK'),
               ),
             ],
