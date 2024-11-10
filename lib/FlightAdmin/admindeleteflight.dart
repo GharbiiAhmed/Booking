@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/firebase_service.dart';
+import '../../services/FlightFirebase/firebase_service.dart';
+
 
 class DeleteFlightScreen extends StatelessWidget {
   final String flightId;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/firebase_service.dart';
+import '../../services/FlightFirebase/firebase_service.dart';
+
 
 class UpdateFlightScreen extends StatefulWidget {
   final String flightId;
@@ -30,6 +31,10 @@ class _UpdateFlightScreenState extends State<UpdateFlightScreen> {
   late TextEditingController _originController;
   late TextEditingController _destinationController;
 
+  String? _tripType;
+  DateTime? _departureDate;
+  DateTime? _returnDate;
+
   @override
   void initState() {
     super.initState();
@@ -43,12 +48,15 @@ class _UpdateFlightScreenState extends State<UpdateFlightScreen> {
     _imagePathController = TextEditingController(text: widget.initialFlightData['imagePath']);
     _originController = TextEditingController(text: widget.initialFlightData['origin']);
     _destinationController = TextEditingController(text: widget.initialFlightData['destination']);
+    _tripType = widget.initialFlightData['tripType'];
+    _departureDate = DateTime.tryParse(widget.initialFlightData['departureDate'] ?? '');
+    _returnDate = _tripType == 'Round Trip' ? DateTime.tryParse(widget.initialFlightData['returnDate'] ?? '') : null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Update Flight')),
+      appBar: AppBar(title: Text('Update Flight')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -65,13 +73,62 @@ class _UpdateFlightScreenState extends State<UpdateFlightScreen> {
               _buildTextField(_imagePathController, 'Image Path'),
               _buildTextField(_originController, 'Origin'),
               _buildTextField(_destinationController, 'Destination'),
+
+              // Dropdown for trip type selection
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: 'Trip Type'),
+                value: _tripType,
+                items: ['One Way', 'Round Trip'].map((type) {
+                  return DropdownMenuItem(
+                    value: type,
+                    child: Text(type),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _tripType = value;
+                    // Reset return date when switching trip types
+                    if (_tripType == 'One Way') {
+                      _returnDate = null;
+                    }
+                  });
+                },
+                validator: (value) => value == null ? 'Please select a trip type' : null,
+              ),
+
+              // Date picker for departure date
+              const SizedBox(height: 16),
+              _buildDatePicker(
+                label: 'Departure Date',
+                selectedDate: _departureDate,
+                onDateSelected: (DateTime date) {
+                  setState(() {
+                    _departureDate = date;
+                  });
+                },
+              ),
+
+              // Conditionally show return date picker if Round Trip is selected
+              if (_tripType == 'Round Trip') ...[
+                const SizedBox(height: 16),
+                _buildDatePicker(
+                  label: 'Return Date',
+                  selectedDate: _returnDate,
+                  onDateSelected: (DateTime date) {
+                    setState(() {
+                      _returnDate = date;
+                    });
+                  },
+                ),
+              ],
+
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     try {
                       await _firebaseService.updateFlight(
-                        widget.flightId, // Pass as positional argument
+                        widget.flightId,
                         flightNumber: _flightNumberController.text,
                         price: double.parse(_priceController.text),
                         duration: int.parse(_durationController.text),
@@ -82,6 +139,9 @@ class _UpdateFlightScreenState extends State<UpdateFlightScreen> {
                         imagePath: _imagePathController.text,
                         origin: _originController.text,
                         destination: _destinationController.text,
+                        tripType: _tripType!, // Pass the selected trip type
+                        departureDate: _departureDate!.toIso8601String(), // Format date to string
+                        returnDate: _tripType == 'Round Trip' ? _returnDate?.toIso8601String() : null, // Only include return date for round trip
                       );
                       Navigator.pop(context);
                     } catch (e) {
@@ -93,7 +153,6 @@ class _UpdateFlightScreenState extends State<UpdateFlightScreen> {
                 },
                 child: const Text('Update Flight'),
               ),
-
             ],
           ),
         ),
@@ -107,6 +166,36 @@ class _UpdateFlightScreenState extends State<UpdateFlightScreen> {
       decoration: InputDecoration(labelText: label),
       keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
       validator: (value) => value == null || value.isEmpty ? 'Please enter $label' : null,
+    );
+  }
+
+  // Build the Date Picker for Departure and Return dates
+  Widget _buildDatePicker({
+    required String label,
+    required DateTime? selectedDate,
+    required Function(DateTime) onDateSelected,
+  }) {
+    return GestureDetector(
+      onTap: () async {
+        DateTime initialDate = selectedDate ?? DateTime.now();
+        DateTime? pickedDate = await showDatePicker(
+          context: context,
+          initialDate: initialDate,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2101),
+        );
+        if (pickedDate != null && pickedDate != selectedDate) {
+          onDateSelected(pickedDate);
+        }
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(labelText: label),
+        child: Text(
+          selectedDate != null
+              ? '${selectedDate.toLocal()}'.split(' ')[0]
+              : 'Select a date',
+        ),
+      ),
     );
   }
 
@@ -125,4 +214,3 @@ class _UpdateFlightScreenState extends State<UpdateFlightScreen> {
     super.dispose();
   }
 }
-

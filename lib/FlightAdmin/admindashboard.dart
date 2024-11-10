@@ -1,8 +1,10 @@
-import 'package:flight_reservation/admin/adminaddflight.dart';
-import 'package:flight_reservation/admin/adminupdateflight.dart';
-import 'package:flight_reservation/services/firebase_service.dart';
+
+import 'package:flight_reservation/services/FlightFirebase/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'adminaddflight.dart';
+import 'adminupdateflight.dart';
 
 class AdminDashboard extends StatefulWidget {
   @override

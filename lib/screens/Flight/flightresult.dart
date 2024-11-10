@@ -1,4 +1,4 @@
-import 'package:flight_reservation/services/firebase_service.dart';
+import 'package:flight_reservation/services/FlightFirebase/firebase_service.dart';
 import 'package:flutter/material.dart';
 
 class FlightResultsScreen extends StatefulWidget {
@@ -106,6 +106,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                   String flightImagePath = flight['imagePath'] ?? 'assets/default_image.png';
                   String flightNumber = flight['flightNumber'] ?? 'Unknown Flight Number';
                   String flightPrice = flight['price'] != null ? '\$${flight['price']}' : 'Price not available';
+                  String tripType = widget.tripType; // Use the passed trip type
 
                   return Card(
                     elevation: 4,
@@ -120,7 +121,13 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         ),
                       ),
                       title: Text(flightNumber), // Use fallback if flightNumber is null
-                      subtitle: Text(flightPrice), // Use fallback if price is null
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(flightPrice), // Use fallback if price is null
+                          Text('Trip Type: $tripType'), // Display the trip type (One-Way or Round-Trip)
+                        ],
+                      ),
                       onTap: () {
                         // Navigate to the booking screen with selected flight details
                         Navigator.pushNamed(context, '/booking', arguments: flight);
@@ -190,7 +197,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Example filter options (can add more if needed)
-              DropdownButtonFormField<String>(
+              DropdownButtonFormField<String>( // Price Range Filter
                 decoration: InputDecoration(labelText: 'Price Range'),
                 items: ['Under \$100', '\$100 - \$500', 'Above \$500']
                     .map((priceRange) {
@@ -203,7 +210,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                   // Handle price range selection
                 },
               ),
-              DropdownButtonFormField<String>(
+              DropdownButtonFormField<String>( // Duration Filter
                 decoration: InputDecoration(labelText: 'Flight Duration'),
                 items: ['Under 3 hours', '3-6 hours', 'Above 6 hours']
                     .map((duration) {

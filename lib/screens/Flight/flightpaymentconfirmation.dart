@@ -7,6 +7,15 @@ class PaymentConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get values with a fallback of 'N/A' if the value is null
+    String flightNumber = bookingDetails['flightNumber'] ?? 'N/A';
+    String departure = bookingDetails['departure'] ?? 'N/A';
+    String arrival = bookingDetails['arrival'] ?? 'N/A';
+    String price = bookingDetails['price'] ?? 'N/A';
+    String name = bookingDetails['name'] ?? 'N/A';
+    String passport = bookingDetails['passport'] ?? 'N/A';
+    String seat = bookingDetails['seat'] ?? 'N/A';
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Payment Confirmation'),
@@ -23,16 +32,16 @@ class PaymentConfirmationScreen extends StatelessWidget {
             SizedBox(height: 20),
             Text('Flight Details:', style: TextStyle(fontSize: 20)),
             SizedBox(height: 10),
-            Text('Flight Number: ${bookingDetails['flightNumber']}'),
-            Text('Departure: ${bookingDetails['departure']}'),
-            Text('Arrival: ${bookingDetails['arrival']}'),
-            Text('Price: ${bookingDetails['price']}'),
+            Text('Flight Number: $flightNumber'),
+            Text('Departure: $departure'),
+            Text('Arrival: $arrival'),
+            Text('Price: $price'),
             SizedBox(height: 20),
             Text('Passenger Details:', style: TextStyle(fontSize: 20)),
             SizedBox(height: 10),
-            Text('Name: ${bookingDetails['name']}'),
-            Text('Passport: ${bookingDetails['passport']}'),
-            Text('Seat: ${bookingDetails['seat']}'),
+            Text('Name: $name'),
+            Text('Passport: $passport'),
+            Text('Seat: $seat'),
             SizedBox(height: 40),
             Center(
               child: ElevatedButton(

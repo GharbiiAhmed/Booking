@@ -1,6 +1,6 @@
+import 'package:flight_reservation/screens/Flight/flightresult.dart';
 import 'package:flutter/material.dart';
-import '../services/firebase_service.dart'; // Import the Firebase service
-import 'flightresult.dart'; // Import the results screen
+import '../../services/FlightFirebase/firebase_service.dart'; // Import the Firebase service
 import 'flightbooking.dart'; // Import the BookingScreen
 
 class FlightSearchScreen extends StatefulWidget {
@@ -205,6 +205,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                     itemCount: bestOffers.length,
                     itemBuilder: (context, index) {
                       final offer = bestOffers[index];
+                      final offerPrice = offer['price'] ?? 0;
+                      final priceColor = offerPrice < 300 ? Colors.green : Colors.red; // Cool price colors
                       return Card(
                         margin: EdgeInsets.symmetric(vertical: 8.0),
                         child: Padding(
@@ -235,28 +237,45 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     ),
                                     Text(offer['airline'] ?? 'Unknown Airline'),
-                                    Text('\$${offer['price'] ?? 'Unknown'}'),
+                                    Text('Trip Type: ${offer['tripType'] ?? 'N/A'}'), // Added Trip Type
+                                    Text('\$${offerPrice}'),
                                     Text('Duration: ${offer['duration'] ?? 'Unknown'} minutes'),
                                     Text('Layovers: ${offer['layovers'] ?? 'None'}'),
                                     SizedBox(height: 10),
                                     ElevatedButton(
                                       onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => BookingScreen(
-                                              flightDetails: {
-                                                'flightNumber': offer['flightNumber'],
-                                                'airline': offer['airline'],
-                                                'price': offer['price'],
-                                              },
+                                        if (offer['tripType'] != null) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => BookingScreen(
+                                                flightDetails: {
+                                                  'flightNumber': offer['flightNumber'] ?? 'Unknown',
+                                                  'airline': offer['airline'] ?? 'Unknown Airline',
+                                                  'price': offer['price'] ?? 0.0,
+                                                  'tripType': offer['tripType'] ?? 'Unknown',
+                                                },
+                                              ),
                                             ),
-                                          ),
-                                        );
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('Trip Type is missing for this offer')),
+                                          );
+                                        }
                                       },
                                       child: Text('Book Now'),
                                     ),
                                   ],
+                                ),
+                              ),
+                              // Display price with cool color next to Book Now button
+                              Container(
+                                color: priceColor,
+                                padding: EdgeInsets.all(8),
+                                child: Text(
+                                  '\$${offerPrice}',
+                                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],

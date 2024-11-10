@@ -1,6 +1,8 @@
-import 'package:flight_reservation/admin/adminupdateflight.dart';
+
 import 'package:flutter/material.dart';
-import '../services/firebase_service.dart';
+import '../../services/FlightFirebase/firebase_service.dart';
+
+import 'adminupdateflight.dart';
 
 class ReadFlightsScreen extends StatelessWidget {
   final FirebaseService _firebaseService = FirebaseService();

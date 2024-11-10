@@ -1,3 +1,10 @@
+import 'package:flight_reservation/FlightAdmin/admindashboard.dart';
+import 'package:flight_reservation/FlightAdmin/userdashboard.dart';
+import 'package:flight_reservation/screens/Flight/flightbooking.dart';
+import 'package:flight_reservation/screens/Flight/flightpayment.dart';
+import 'package:flight_reservation/screens/Flight/flightresult.dart';
+import 'package:flight_reservation/screens/Flight/flightsearch.dart';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -5,12 +12,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'class/AppLocalizations.dart';
-import 'screens/flightpayment.dart';
-import 'screens/flightsearch.dart';
-import 'screens/flightresult.dart';
-import 'screens/flightbooking.dart';
-import 'admin/admindashboard.dart';
-import 'admin/userdashboard.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

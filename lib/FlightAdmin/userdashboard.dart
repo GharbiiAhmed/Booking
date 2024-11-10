@@ -1,6 +1,7 @@
-import 'package:flight_reservation/admin/reclamationdetailsscreen.dart';
-import 'package:flight_reservation/admin/reclamationeditform.dart';
-import 'package:flight_reservation/admin/reclamationform.dart';
+
+import 'package:flight_reservation/screens/FlightAdmin/reclamationdetailsscreen.dart';
+import 'package:flight_reservation/screens/FlightAdmin/reclamationeditform.dart';
+import 'package:flight_reservation/screens/FlightAdmin/reclamationform.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 

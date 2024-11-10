@@ -1,8 +1,10 @@
 import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../services/FlightFirebase/firebase_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Map<String, dynamic> flightDetails;
@@ -20,6 +22,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Fetch data from flightDetails
+    var flightDetails = widget.flightDetails;
+
+    // Ensure proper fallback if data is missing
+    String departure = flightDetails['departureDate'] ?? 'N/A';
+    String arrival = flightDetails['returnDate'] ?? 'N/A';
+    String tripType = flightDetails['tripType'] ?? 'N/A';
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Payment'),
@@ -35,31 +45,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             SizedBox(height: 20),
             Text(
-              'Flight Number: ${widget.flightDetails['flightNumber']}',
+              'Flight Number: ${flightDetails['flightNumber']}',
               style: TextStyle(fontSize: 18),
             ),
             Text(
-              'Departure: ${widget.flightDetails['departure']}',
+              'Departure: $departure',
               style: TextStyle(fontSize: 18),
             ),
             Text(
-              'Arrival: ${widget.flightDetails['arrival']}',
+              'Arrival: $arrival',
               style: TextStyle(fontSize: 18),
             ),
             Text(
-              'Price: \$${widget.flightDetails['price']}',
+              'Trip Type: $tripType',
               style: TextStyle(fontSize: 18),
             ),
             Text(
-              'Name: ${widget.flightDetails['name']}',
-              style: TextStyle(fontSize: 18),
-            ),
-            Text(
-              'Passport: ${widget.flightDetails['passport']}',
-              style: TextStyle(fontSize: 18),
-            ),
-            Text(
-              'Selected Seat: ${widget.flightDetails['seat']}',
+              'Price: \$${flightDetails['price']}',
               style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 20),
@@ -104,7 +106,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             // Confirm Payment Button
             Center(
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (cardNumberController.text.isEmpty ||
                       expirationDateController.text.isEmpty ||
                       cvvController.text.isEmpty) {
@@ -114,23 +116,47 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   } else {
                     // Prepare payment details
                     Map<String, dynamic> paymentDetails = {
-                      'flightNumber': widget.flightDetails['flightNumber'],
-                      'name': widget.flightDetails['name'],
-                      'passport': widget.flightDetails['passport'],
-                      'seat': widget.flightDetails['seat'],
-                      'price': widget.flightDetails['price'],
+                      'flightNumber': flightDetails['flightNumber'],
+                      'price': flightDetails['price'],
                       'cardNumber': cardNumberController.text,
                       'expirationDate': expirationDateController.text,
                       'cvv': cvvController.text,
+                      'tripType': tripType,  // Added tripType to paymentDetails
+                      'departure': departure,
+                      'arrival': arrival,  // Added arrival field
                     };
 
-                    // Show a notification before generating the PDF
+                    // Show a notification before processing the payment
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Processing Payment...')),
                     );
 
+                    // Save payment to Firestore
+                    await savePayment(
+                      userId: 'user123',  // Example userId, replace with actual user
+                      flightId: flightDetails['flightNumber'], // Use flight number as flightId
+                      price: double.tryParse(flightDetails['price'].toString()) ?? 0.0,  // Convert price to double
+                      paymentMethod: 'Credit Card',  // Hardcoded for now
+                      paymentStatus: 'Success',  // Assuming payment was successful
+                      tripType: tripType,
+                      departure: departure,
+                      arrival: arrival,
+                    );
+
+                    // Show Payment Successful message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Payment Successful!')),
+                    );
+
+                    // Navigate back to the Flight Search screen
+                    Navigator.popUntil(context, (route) => route.isFirst);
+
+
+                    // Use a delay before opening the PDF to ensure the screen transition happens
+                    await Future.delayed(Duration(milliseconds: 500));
+
                     // Generate and download the PDF after payment
-                    generateAndDownloadPDF(paymentDetails);
+                    await generateAndDownloadPDF(paymentDetails);
                   }
                 },
                 child: Text('Confirm Payment'),
@@ -142,18 +168,50 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
+  Future<void> savePayment({
+    required String userId,
+    required String flightId,
+    required double price,
+    required String paymentMethod,
+    required String paymentStatus,
+    required String tripType,
+    required String departure, // Origin
+    required String arrival, // Destination
+  }) async {
+    try {
+      final paymentData = {
+        'userId': userId,
+        'flightId': flightId,
+        'price': price,
+        'paymentMethod': paymentMethod,
+        'paymentStatus': paymentStatus,
+        'tripType': tripType,
+        'departure': departure, // Saving departure as origin
+        'arrival': arrival, // Saving arrival as destination
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      // Save data to Firestore in the 'payments' collection
+      await FirebaseFirestore.instance.collection('payments').add(paymentData);
+    } catch (e) {
+      print("Error saving payment: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving payment: $e')),
+      );
+    }
+  }
+
   Future<void> generateAndDownloadPDF(Map<String, dynamic> paymentDetails) async {
     try {
       final pdf = pw.Document();
 
-      // Add a stylish header with a gradient background color
       pdf.addPage(
         pw.Page(
           build: (pw.Context context) {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Header with gradient background
+                // Header
                 pw.Container(
                   color: PdfColors.blue,
                   child: pw.Padding(
@@ -173,15 +231,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
                 pw.Divider(),
                 pw.SizedBox(height: 10),
-                _buildTable([
-                  ['Flight Number:', paymentDetails['flightNumber'] ?? 'N/A'],
+                _buildTable([['Flight Number:', paymentDetails['flightNumber'] ?? 'N/A'],
                   ['Departure:', paymentDetails['departure'] ?? 'N/A'],
                   ['Arrival:', paymentDetails['arrival'] ?? 'N/A'],
+                  ['Trip Type:', paymentDetails['tripType'] ?? 'N/A'],
                   ['Price:', '\$${paymentDetails['price'] ?? 'N/A'}'],
-                  ['Name:', paymentDetails['name'] ?? 'N/A'],
-                  ['Passport:', paymentDetails['passport'] ?? 'N/A'],
-                  ['Selected Seat:', paymentDetails['seat'] ?? 'N/A'],
                 ]),
+
                 pw.SizedBox(height: 20),
 
                 // Payment Details with different background color
@@ -191,12 +247,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
                 pw.Divider(),
                 pw.SizedBox(height: 10),
-                _buildTable([
-                  ['Payment Method:', 'Credit Card'],
+                _buildTable([['Payment Method:', 'Credit Card'],
                   ['Amount Paid:', '\$${paymentDetails['price'] ?? 'N/A'}'],
                   ['Card Number:', paymentDetails['cardNumber'] ?? 'N/A'],
                   ['Expiration Date:', paymentDetails['expirationDate'] ?? 'N/A'],
                 ]),
+
                 pw.SizedBox(height: 20),
 
                 // Footer message
@@ -212,34 +268,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
       );
 
-      // Convert the PDF document to bytes
-      final Uint8List pdfBytes = await pdf.save();
-
-      // Use the printing package to download the PDF
-      await Printing.layoutPdf(onLayout: (PdfPageFormat format) async {
-        return pdfBytes;
-      });
-
+      // Convert to PDF bytes and print the PDF
+      final pdfBytes = await pdf.save();
+      await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdfBytes);
     } catch (e) {
-      print("Error generating PDF: $e");  // Error handling
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error generating PDF: $e')),
-      );
+      print("Error generating PDF: $e");
     }
   }
 
-  // Helper function to build a styled table
-  pw.Widget _buildTable(List<List<String>> data) {
-    return pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.black),
-      children: data.map((row) {
-        return pw.TableRow(
-          children: [
-            pw.Text(row[0], style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
-            pw.Text(row[1], style: pw.TextStyle(fontSize: 12)),
-          ],
-        );
-      }).toList(),
+  pw.Table _buildTable(List<List<String>> data) {
+    return pw.Table.fromTextArray(
+      headers: ['Field', 'Value'],
+      data: data,
+      border: pw.TableBorder.all(),
+      cellAlignment: pw.Alignment.centerLeft,
     );
   }
 }

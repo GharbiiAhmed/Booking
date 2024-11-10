@@ -28,7 +28,7 @@ class AppLocalizations {
   String get admin {
     return Intl.message(
       'Admin Mode',
-      name: 'admin',
+      name: 'FlightAdmin',
       desc: 'Admin mode label',
     );
   }
