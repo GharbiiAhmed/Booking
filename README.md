@@ -22,7 +22,7 @@ Installation
 Clone the repository:
 bash
 Copy code
-git clone https://github.com/yourusername/flight_reservation.git
+git clone https://github.com/GharbiiAhmed/Booking/Flight-booking.git
 cd flight_reservation
 Install dependencies:
 bash
