@@ -215,6 +215,53 @@ class FirebaseService {
       print("Error saving payment: $e");
     }
   }
+// Save a new reclamation
+  Future<void> saveReclamation({
+    required String userId,
+    required String username,
+    required String email,
+    required String details,
+  }) async {
+    try {
+      final reclamationData = {
+        'userId': userId,
+        'username': username,
+        'email': email,
+        'details': details,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
 
+      // Save reclamation in Firestore
+      await _firestore.collection('reclamations').add(reclamationData);
+    } catch (e) {
+      print('Error saving reclamation: $e');
+      rethrow; // Rethrow the error to handle it in the calling function
+    }
+  }
+
+  // Update an existing reclamation
+  Future<void> updateReclamation(String reclamationId, {
+    required String details,
+  }) async {
+    try {
+      final reclamationData = {
+        'details': details,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _firestore.collection('reclamations').doc(reclamationId).update(reclamationData);
+    } catch (e) {
+      print("Failed to update reclamation: $e");
+    }
+  }
+
+  // Delete an existing reclamation
+  Future<void> deleteReclamation(String reclamationId) async {
+    try {
+      await _firestore.collection('reclamations').doc(reclamationId).delete();
+    } catch (e) {
+      print("Failed to delete reclamation: $e");
+    }
+  }
 
 }

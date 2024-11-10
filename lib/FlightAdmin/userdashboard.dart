@@ -1,7 +1,6 @@
-
-import 'package:flight_reservation/screens/FlightAdmin/reclamationdetailsscreen.dart';
-import 'package:flight_reservation/screens/FlightAdmin/reclamationeditform.dart';
-import 'package:flight_reservation/screens/FlightAdmin/reclamationform.dart';
+import 'package:flight_reservation/FlightAdmin/reclamationdetailsscreen.dart';
+import 'package:flight_reservation/FlightAdmin/reclamationeditform.dart';
+import 'package:flight_reservation/FlightAdmin/reclamationform.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -68,7 +67,16 @@ class UserDashboard extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () async {
-                          await reclamation.reference.delete(); // Delete reclamation
+                          try {
+                            await reclamation.reference.delete(); // Delete reclamation
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Reclamation deleted successfully')),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to delete reclamation')),
+                            );
+                          }
                         },
                       ),
                       IconButton(

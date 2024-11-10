@@ -19,8 +19,13 @@ class ReclamationDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Reclamation ID: ${reclamation.id}'),
+            Text('Reclamation ID: ${reclamation.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Text('Username: ${reclamationData['username']}'),
+            Text('Email: ${reclamationData['email']}'),
+            const SizedBox(height: 10),
             Text('Details: ${reclamationData['details']}'),
+            const SizedBox(height: 10),
             Text('Created At: ${reclamationData['createdAt']?.toDate()}'),
             const SizedBox(height: 20),
 

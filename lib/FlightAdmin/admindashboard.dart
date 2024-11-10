@@ -1,4 +1,3 @@
-
 import 'package:flight_reservation/services/FlightFirebase/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -127,7 +126,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           // Show confirmation dialog before deleting
                           bool confirm = await _showConfirmationDialog(context);
                           if (confirm) {
-                            await reclamation.reference.delete(); // Delete reclamation
+                            try {
+                              await reclamation.reference.delete(); // Delete reclamation
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Reclamation deleted successfully')),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to delete reclamation')),
+                              );
+                            }
                           }
                         },
                       ),
