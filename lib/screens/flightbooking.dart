@@ -1,5 +1,6 @@
 import 'package:flight_reservation/screens/flightseatselection.dart';
-import 'package:flight_reservation/screens/flightpayment.dart'; // Make sure this is imported
+import 'package:flight_reservation/screens/flightpayment.dart'; // Ensure this is imported
+import 'package:flight_reservation/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 
 class BookingScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class _BookingScreenState extends State<BookingScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController passportController = TextEditingController();
   String? selectedSeat;
+  final FirebaseService _firebaseService = FirebaseService(); // Initialize FirebaseService
 
   @override
   Widget build(BuildContext context) {
@@ -102,6 +104,9 @@ class _BookingScreenState extends State<BookingScreen> {
                       SnackBar(content: Text('Please fill all fields')),
                     );
                   } else {
+                    // Save booking to Firestore before proceeding to payment
+                    _saveBookingToFirestore();
+
                     // Navigate to payment screen with flight details and booking information
                     Navigator.pushNamed(
                       context,
@@ -126,6 +131,56 @@ class _BookingScreenState extends State<BookingScreen> {
       ),
     );
   }
+
+  Future<void> _saveBookingToFirestore() async {
+    try {
+      // Prepare booking details to save
+      final bookingDetails = {
+        'flightNumber': widget.flightDetails['flightNumber'],
+        'departure': widget.flightDetails['departure'],
+        'arrival': widget.flightDetails['arrival'],
+        'price': widget.flightDetails['price'],
+        'name': nameController.text,
+        'passport': passportController.text,
+        'seat': selectedSeat ?? 'No seat selected',
+        'timestamp': DateTime.now(), // Add a timestamp for the booking
+      };
+
+      // Call the method in FirebaseService to save the booking
+      await _firebaseService.saveBooking(bookingDetails);
+
+      // Show a cool notification after the successful save
+      _showCoolNotification();
+    } catch (e) {
+      print('Error saving booking: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving booking. Please try again.')),
+      );
+    }
+  }
+
+  void _showCoolNotification() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Thank you for your booking! Your flight is confirmed.',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.blueAccent, // Cool background color
+        behavior: SnackBarBehavior.floating, // Makes the Snackbar floating
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        duration: Duration(seconds: 3), // Auto-dismiss after 3 seconds
+      ),
+    );
+  }
 }
-
-

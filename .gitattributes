@@ -1,0 +1,30 @@
+# Treat text files as text and normalize line endings
+* text=auto
+
+# Flutter files
+*.dart text
+*.yaml text
+*.gradle text
+*.properties text
+*.json text
+*.md text
+
+# Handle binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.mp4 binary
+*.mov binary
+*.otf binary
+*.ttf binary
+*.so binary
+*.zip binary
+
+# iOS and macOS
+Podfile text
+*.xcconfig text
+*.plist text
+*.pbxproj text
+*.xcscheme text
+*.xcworkspace text

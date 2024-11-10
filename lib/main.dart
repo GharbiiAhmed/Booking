@@ -1,10 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
+import 'class/AppLocalizations.dart';
 import 'screens/flightpayment.dart';
 import 'screens/flightsearch.dart';
 import 'screens/flightresult.dart';
 import 'screens/flightbooking.dart';
+import 'admin/admindashboard.dart';
+import 'admin/userdashboard.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // Request permissions for iOS devices
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
   runApp(const MyApp());
 }
 
@@ -16,16 +35,78 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // Track the current theme mode
   ThemeMode _themeMode = ThemeMode.light;
-
-  // Track the current index of the BottomNavigationBar
   int _currentIndex = 0;
+  String _mode = 'home';
+
+  // Notification plugin initialization
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+    _setupFirebaseListeners();
+  }
+
+  void _initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  void _setupFirebaseListeners() {
+    // Handling foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        _showNotification(message);
+      }
+    });
+
+    // Handling background messages
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print('A new message was opened from the background: ${message.data}');
+      // Handle navigation based on the message data
+    });
+
+    // Handling when the app is terminated
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        print('Notification caused app to open: ${message.data}');
+      }
+    });
+  }
+
+  Future<void> _showNotification(RemoteMessage message) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'high_importance_channel', // id
+      'High Importance Notifications', // title
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: false,
+    );
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(
+      0, // Notification ID
+      message.notification?.title,
+      message.notification?.body,
+      platformChannelSpecifics,
+      payload: message.data['payload'], // Optional: include payload data
+    );
+  }
 
   void _toggleTheme() {
     setState(() {
       _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
+  }
+
+  void _setMode(String mode) {
+    setState(() {
+      _mode = mode;
+      _currentIndex = 0;
+    });
+    Navigator.pop(context); // Close the drawer
   }
 
   @override
@@ -41,11 +122,20 @@ class _MyAppState extends State<MyApp> {
         brightness: Brightness.dark,
       ),
       themeMode: _themeMode,
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('es', 'ES'),
+        Locale('fr', 'FR'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        AppLocalizations.delegate, // Use the AppLocalizations delegate
+      ],
       initialRoute: '/search',
       routes: {
         '/search': (context) => FlightSearchScreen(onThemeToggle: _toggleTheme),
-        // Add other routes if necessary
-        // '/courses': (context) => CoursesScreen(), // Example route for courses
+        '/details': (context) => FlightDetailsScreen(), // New route for FlightDetailsScreen
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/results') {
@@ -60,12 +150,12 @@ class _MyAppState extends State<MyApp> {
             ),
           );
         } else if (settings.name == '/booking') {
-          final args = settings.arguments as Map<String, dynamic>; // Use dynamic here
+          final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
             builder: (context) => BookingScreen(flightDetails: args),
           );
         } else if (settings.name == '/payment') {
-          final args = settings.arguments as Map<String, dynamic>; // Use dynamic here
+          final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
             builder: (context) => PaymentScreen(flightDetails: args),
           );
@@ -73,26 +163,55 @@ class _MyAppState extends State<MyApp> {
         return null;
       },
       home: Scaffold(
-        body: IndexedStack(
+        appBar: AppBar(title: Text(_mode == 'admin' ? 'Admin Dashboard' : _mode == 'user' ? 'User Dashboard' : 'Flight App')),
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(color: Colors.blue),
+                child: Text(
+                  'Flight App',
+                  style: TextStyle(color: Colors.white, fontSize: 24),
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.home),
+                title: Text('Home'),
+                onTap: () => _setMode('home'),
+              ),
+              ListTile(
+                leading: Icon(Icons.admin_panel_settings),
+                title: Text('Admin Mode'),
+                onTap: () => _setMode('admin'),
+              ),
+              ListTile(
+                leading: Icon(Icons.person),
+                title: Text('User Mode'),
+                onTap: () => _setMode('user'),
+              ),
+            ],
+          ),
+        ),
+        body: _mode == 'admin'
+            ? AdminDashboard()
+            : _mode == 'user'
+            ? UserDashboard()
+            : IndexedStack(
           index: _currentIndex,
           children: [
-            FlightSearchScreen(onThemeToggle: _toggleTheme), // Home screen
-            Container(color: Colors.red), // Placeholder for Courses screen
-            Container(color: Colors.green), // Placeholder for Notifications screen
+            FlightSearchScreen(onThemeToggle: _toggleTheme),
+            Container(color: Colors.red),
+            Container(color: Colors.green),
           ],
         ),
-        bottomNavigationBar: BottomNavigationBar(
+        bottomNavigationBar: _mode == 'home'
+            ? BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) {
             setState(() {
               _currentIndex = index;
             });
-
-            // Navigate to other screens when tapping
-            if (index == 1) {
-              // Navigate to the 'Courses' screen
-              Navigator.pushNamed(context, '/search');
-            }
           },
           items: const [
             BottomNavigationBarItem(
@@ -108,9 +227,35 @@ class _MyAppState extends State<MyApp> {
               label: 'Car Rental',
             ),
           ],
-        ),
+        )
+            : null,
       ),
     );
   }
 }
 
+// New Widget for Flight Details Screen
+class FlightDetailsScreen extends StatelessWidget {
+  const FlightDetailsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Flight Details')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Flight Details will be shown here.'),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/booking', arguments: {'flightId': 123}); // Example argument
+              },
+              child: const Text('Book Flight'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -1,33 +1,65 @@
-# Gradle files
-.gradle/
+# Flutter related
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
 build/
+coverage/
+.idea/
+.vscode/
 
-# Local configuration file (sdk path, etc)
-local.properties
+# iOS related
+ios/Flutter/.last_build_id
+ios/Pods
+ios/Runner.xcworkspace
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/.symlinks
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.framework
+ios/Flutter/app.podspec
+*.hmap
 
-# Log/OS Files
+# Android related
+android/.gradle/
+android/app/*.iml
+android/local.properties
+android/.idea
+android/gradle/
+android/app/build/
+
+# Xcode and macOS
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.xcworkspacedata
+*.xcuserstate
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.app.dSYM
+
+# IDE related
+*.iml
+*.ipr
+*.iws
+*.swp
+*~
+
+# User-specific files
+.idea/
+*.iml
+*.DS_Store
+*.swp
 *.log
 
-# Android Studio generated files and folders
-captures/
-.externalNativeBuild/
-.cxx/
-*.apk
-output.json
-
-# IntelliJ
-*.iml
-.idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
-
-# Keystore files
-*.jks
-*.keystore
-
-# Google Services (e.g. APIs or Firebase)
-google-services.json
-
-# Android Profiling
-*.hprof
+# Web related
+web/.dart_tool/
+web/build/
+web/main.dart.js
+web/flutter_service_worker.js
+web/index.html
+web/.packages

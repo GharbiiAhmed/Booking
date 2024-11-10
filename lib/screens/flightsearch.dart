@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'flightresult.dart'; // Make sure to import the results screen
+import '../services/firebase_service.dart'; // Import the Firebase service
+import 'flightresult.dart'; // Import the results screen
 import 'flightbooking.dart'; // Import the BookingScreen
 
 class FlightSearchScreen extends StatefulWidget {
@@ -17,6 +18,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   DateTime? returnDate;
   TextEditingController originController = TextEditingController();
   TextEditingController destinationController = TextEditingController();
+  final FirebaseService _firebaseService = FirebaseService();
+  Future<List<Map<String, dynamic>>>? bestOffersFuture; // Future for best offers
 
   Future<void> _selectDate(BuildContext context, bool isDeparture) async {
     final DateTime? picked = await showDatePicker(
@@ -36,41 +39,38 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     }
   }
 
-  // Sample data for best offer flights with images
-  List<Map<String, dynamic>> bestOffers = [
-    {
-      'flightNumber': 'AA123',
-      'price': 150,
-      'duration': 120, // in minutes
-      'layovers': 0,
-      'airline': 'Airline A',
-      'imagePath': 'assets/images/1.png', // Path to the image
-    },
-    {
-      'flightNumber': 'BB456',
-      'price': 300,
-      'duration': 180,
-      'layovers': 1,
-      'airline': 'Airline B',
-      'imagePath': 'assets/images/test.png',
-    },
-    {
-      'flightNumber': 'CC789',
-      'price': 200,
-      'duration': 150,
-      'layovers': 0,
-      'airline': 'Airline C',
-      'imagePath': 'assets/images/1.png',
-    },
-    {
-      'flightNumber': 'DD012',
-      'price': 250,
-      'duration': 170,
-      'layovers': 1,
-      'airline': 'Airline D',
-      'imagePath': 'assets/images/test.png',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Fetch best offers when the screen is initialized
+    bestOffersFuture = _firebaseService.getBestOffers(maxPrice: 500, maxLayovers: 1); // Set your criteria
+
+    // Show welcome dialog when the screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showWelcomeDialog();
+    });
+  }
+
+  void _showWelcomeDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissal by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Welcome to Flight Booking!'),
+          content: Text('We are glad to have you here. Start searching for your flights!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,22 +116,20 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                 Text('Round-Trip'),
               ],
             ),
-            // TextField for Origin with flight icon
             TextField(
               controller: originController,
               decoration: InputDecoration(
                 labelText: 'Origin',
                 hintText: 'Enter origin',
-                prefixIcon: Icon(Icons.flight_takeoff), // Flight takeoff icon
+                prefixIcon: Icon(Icons.flight_takeoff),
               ),
             ),
-            // TextField for Destination with flight icon
             TextField(
               controller: destinationController,
               decoration: InputDecoration(
                 labelText: 'Destination',
                 hintText: 'Enter destination',
-                prefixIcon: Icon(Icons.flight_land), // Flight landing icon
+                prefixIcon: Icon(Icons.flight_land),
               ),
             ),
             Row(
@@ -190,58 +188,82 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             Text('Best Offer Flights', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                itemCount: bestOffers.length,
-                itemBuilder: (context, index) {
-                  final offer = bestOffers[index];
-                  return Card(
-                    margin: EdgeInsets.symmetric(vertical: 8.0),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Image.asset(
-                            offer['imagePath'],
-                            width: 120, // Set a fixed width for the image
-                            height: 120, // Set a fixed height for the image
-                            fit: BoxFit.cover,
-                          ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Flight Number: ${offer['flightNumber']}',
-                                    style: TextStyle(fontWeight: FontWeight.bold)),
-                                Text('Airline: ${offer['airline']}'),
-                                Text('Price: \$${offer['price']}'),
-                                Text('Duration: ${offer['duration']} minutes'),
-                                Text('Layovers: ${offer['layovers']}'),
-                                SizedBox(height: 10),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => BookingScreen(
-                                          flightDetails: {
-                                            'flightNumber': offer['flightNumber'],
-                                            'airline': offer['airline'],
-                                            'price': offer['price'],
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Text('Book Now'),
+              child: FutureBuilder<List<Map<String, dynamic>>>( // Fetch best offers
+                future: bestOffersFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text('No offers found.'));
+                  }
+
+                  final bestOffers = snapshot.data!;
+
+                  return ListView.builder(
+                    itemCount: bestOffers.length,
+                    itemBuilder: (context, index) {
+                      final offer = bestOffers[index];
+                      return Card(
+                        margin: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              offer['imagePath'] != null && offer['imagePath'] != ''
+                                  ? Image.network(
+                                offer['imagePath'], // Cloudinary URL for the image
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              )
+                                  : Container(
+                                width: 120,
+                                height: 120,
+                                color: Colors.grey[200], // Placeholder for missing image
+                                child: Icon(Icons.image, color: Colors.grey),
+                              ),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      offer['flightNumber'] ?? 'N/A',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    Text(offer['airline'] ?? 'Unknown Airline'),
+                                    Text('\$${offer['price'] ?? 'Unknown'}'),
+                                    Text('Duration: ${offer['duration'] ?? 'Unknown'} minutes'),
+                                    Text('Layovers: ${offer['layovers'] ?? 'None'}'),
+                                    SizedBox(height: 10),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => BookingScreen(
+                                              flightDetails: {
+                                                'flightNumber': offer['flightNumber'],
+                                                'airline': offer['airline'],
+                                                'price': offer['price'],
+                                              },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Text('Book Now'),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
