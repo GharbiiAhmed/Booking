@@ -467,13 +467,12 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
   }
 
   Future<void> _drawRoute(String pickup, String dropoff) async {
-    // Example coordinates, you can replace these with your pickup/dropoff latitudes and longitudes
-    final pickupLatLng = LatLng(40.7128, -74.0060); // Example: New York City
-    final dropoffLatLng = LatLng(40.7306, -73.9352); // Example: Brooklyn, NY
+    LatLng? pickupLatLng = await _getLatLngFromAddress(pickup);
+    LatLng? dropoffLatLng =await _getLatLngFromAddress(dropoff);
 
     // Create the Mapbox API URL
     final url = 'https://api.mapbox.com/directions/v5/mapbox/driving/'
-        '${pickupLatLng.longitude},${pickupLatLng.latitude};${dropoffLatLng.longitude},${dropoffLatLng.latitude}'
+        '${pickupLatLng?.longitude},${pickupLatLng?.latitude};${dropoffLatLng?.longitude},${dropoffLatLng?.latitude}'
         '?geometries=geojson&access_token=sk.eyJ1IjoiYW1pcmJvdWRpZGFoIiwiYSI6ImNtM2F1anprejA0Z3MyanNlcGk0Z3I2eDYifQ.eWhNkkCqdQSMvy7BmM7KxQ';
 
     // Make the HTTP request to Mapbox
@@ -545,7 +544,8 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
 
       await _drawRoute(_pickupController.text, _dropoffController.text);
 
-      // Calculate the distance between pickup and dropoff
+      print("pickup : $_pickupLatLng");
+      print("dropoff : $_dropoffLatLng");
       double distance = Geolocator.distanceBetween(
         _pickupLatLng!.latitude,
         _pickupLatLng!.longitude,
@@ -569,9 +569,8 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
         _isRouteLoading = false;
       });
     }
-
-    /*await fetchWeatherData(_pickupLatLng!.latitude, _pickupLatLng!.longitude, pickUpweatherData);
-    await fetchWeatherData(_dropoffLatLng!.latitude, _dropoffLatLng!.longitude, dropOffweatherData);*/
+    await fetchWeatherData(_pickupLatLng!.latitude, _pickupLatLng!.longitude, pickUpweatherData);
+    await fetchWeatherData(_dropoffLatLng!.latitude, _dropoffLatLng!.longitude, dropOffweatherData);
   }
 
   double _getZoomLevel(double distanceInMeters) {
@@ -622,7 +621,6 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
     }
 
     if (_pickupLatLng == null && _dropoffLatLng == null) {
-      // Show user's location
       if (_userLocation == null) {
         return const Center(child: CircularProgressIndicator());
       }

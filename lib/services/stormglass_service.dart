@@ -18,6 +18,9 @@ class StormglassService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
+      // Log the response body for debugging
+      print('Failed to load data. Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
       throw Exception('Failed to load data from Stormglass');
     }
   }
