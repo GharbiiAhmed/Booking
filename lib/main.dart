@@ -2,8 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:taxi_reservation/screens/Admin/AllDriversScreen.dart';
 import 'package:taxi_reservation/screens/Admin/AllVehiculesScreen.dart';
-import 'package:taxi_reservation/screens/WeatherScreen.dart';
-import 'screens/home_screen.dart';
+import 'package:taxi_reservation/screens/AuthScreen.dart';
 import 'screens/booking_screen.dart';
 import 'screens/confirmation_screen.dart';
 import 'screens/ridehistory_screen.dart';
@@ -31,16 +30,15 @@ class TaxiReservationApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const HomeScreen(),
+        '/': (context) => LoginScreen(),
         '/booking': (context) => const BookingScreen(),
         '/confirmation': (context) => const ConfirmationScreen(),
-        '/history': (context) => const RideHistoryScreen(),
+        '/history': (context) => RideHistoryScreen(),
         '/ongoing': (context) => const OngoingReservationsScreen(),
         '/addVehicule' : (context) => const AddVehicleScreen(),
         '/addDriver' : (context) => const AddDriverScreen(),
         '/AllVehicules' : (context) => const AllVehiculesScreen(),
         '/AllDrivers' : (context) => const AllDriversScreen(),
-        '/Weather' : (context) => WeatherScreen()
 
       },
     );

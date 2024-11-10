@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:taxi_reservation/models/Reservation.dart';
 import 'package:pdf/widgets.dart' as pw;
+
+import '../models/User.dart';
 
 
 class OngoingReservationsScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class OngoingReservationsScreen extends StatefulWidget {
 }
 
 class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
-  final String userId = '1';
+  final String userId = User.getInstance().userId;
 
   Future<String> _fetchDriverName(String driverId) async {
     try {
@@ -219,9 +219,7 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
       },
     ));
 
-    Directory? directory;
-
-    directory = await getDownloadsDirectory();
+    Directory? directory = await getApplicationDocumentsDirectory();
     if (directory != null) {
       String filePath = p.join(directory.path, 'reservation_${reservation.reservationId}.pdf');
       final file = File(filePath);
@@ -230,7 +228,7 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
       print("PDF saved at ${file.path}");
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF downloaded to: ${file.path}')),
+        SnackBar(content: Text('PDF saved to: ${file.path}')),
       );
     }
   }

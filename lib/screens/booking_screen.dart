@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:taxi_reservation/models/User.dart';
 import '../models/Reservation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
@@ -45,6 +46,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
   List<LatLng> _polylineCoordinates = [];
   LatLng? _pickupLatLng;
   LatLng? _dropoffLatLng;
+  LatLng? _locationLatLng;
   bool _isRouteLoading = false;
   double _zoomLevel= 13.0;
   double _strokeWidthLevel = 4.0;
@@ -53,6 +55,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
   final StormglassService stormglassService = StormglassService();
   Map<String, dynamic>? pickUpweatherData;
   Map<String, dynamic>? dropOffweatherData;
+  Map<String, dynamic>? locationweatherData;
   bool isLoading = true;
 
   @override
@@ -79,7 +82,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
     final _bookingData = Reservation(
       reservationId:
           FirebaseFirestore.instance.collection('reservations').doc().id,
-      userId: '1',
+      userId: User.getInstance().userId,
       driverId: driverId,
       vehicleId: vehicleId,
       reservationDate: DateTime.now(),
@@ -342,6 +345,10 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
                   _withDriver = value;
                   _selectedDriver = null;
                   _selectedDriverDetails = null;
+                  _locationLatLng = null;
+                  locationweatherData = null;
+                  _pickupController.clear();
+                  _carPickupLocationController.clear();
                 });
               },
             ),
@@ -354,6 +361,11 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
                   _withDriver = value;
                   _selectedDriver = null;
                   _selectedDriverDetails = null;
+                  _locationLatLng = null;
+                  locationweatherData = null;
+                  _pickupController.clear();
+                  _carPickupLocationController.clear();
+
                 });
               },
             ),
@@ -362,11 +374,6 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
         ),
         if (_withDriver == true) ...[
           _buildDriverSelection(),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _pickupController,
-            decoration: const InputDecoration(labelText: 'Pick-up Location'),
-          ),
           const SizedBox(height: 16),
           InkWell(
             onTap: () => _selectDate(context, isStart: true),
@@ -407,6 +414,23 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
               ),
             ),
           ),
+          Center(
+            child: isLoading
+                ? CircularProgressIndicator()
+                : locationweatherData != null
+                ? Text('Temperature: ${locationweatherData!['hours'][0]['airTemperature']['noaa']} °C')
+                : Text('Failed to load weather data'),
+          ),
+          TextField(
+            controller: _pickupController,
+            decoration: const InputDecoration(labelText: 'Pick-up Location'),
+            onSubmitted: (_) => _getLocation(_pickupController.text),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 300, // Adjust height as needed
+            child: _buildMapPvehicle(),
+          ),
         ]
         else if (_withDriver == false) ...[
           InkWell(
@@ -435,9 +459,23 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
             ),
           ),
           const SizedBox(height: 16),
+          Center(
+            child: isLoading
+                ? CircularProgressIndicator()
+                : locationweatherData != null
+                ? Text('Temperature: ${locationweatherData!['hours'][0]['airTemperature']['noaa']} °C')
+                : Text('Failed to load weather data'),
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: _carPickupLocationController,
             decoration: const InputDecoration(labelText: 'Car Pickup Location'),
+            onSubmitted: (_) => _getLocation(_carPickupLocationController.text),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 300, // Adjust height as needed
+            child: _buildMapPvehicle(),
           ),
         ],
         const SizedBox(height: 16),
@@ -463,6 +501,23 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
     } else {
       print('Location permission denied');
       // Optionally, show a dialog informing the user
+    }
+  }
+
+  Future<void> _getLocation(String address)async{
+    setState(() {
+      _isRouteLoading = true;
+    });
+    try {
+      _locationLatLng = await _getLatLngFromAddress(address);
+      print('LOCATIONLATLNG : $_locationLatLng');
+      await fetchWeatherData(_locationLatLng!.latitude, _locationLatLng!.longitude, locationweatherData);
+    }catch (e) {
+      print('Error Finding location: $e');
+    } finally {
+      setState(() {
+        _isRouteLoading = false;
+      });
     }
   }
 
@@ -503,7 +558,8 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
       if (locations.isNotEmpty) {
         double lat = locations[0].latitude;
         double lng = locations[0].longitude;
-
+        print("LAT : $lat");
+        print("LNG : $lng");
         // Validate coordinates
         if (lat.abs() <= 90 && lng.abs() <= 180) {
           return LatLng(lat, lng);
@@ -515,7 +571,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
       }
     } catch (e) {
       print("Error geocoding address: $e");
-      return null; // Return null to indicate failure
+      return null;
     }
   }
 
@@ -678,6 +734,57 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
               height: _markerwidthandheight,
               child: const Icon(Icons.location_pin, color: Colors.blue),
             )
+          ]),
+        ],
+      );
+    }
+
+    return const Center(child: Text('Invalid state or error.'));
+  }
+
+  Widget _buildMapPvehicle() {
+    if (_isRouteLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_locationLatLng == null ) {
+      if (_userLocation == null) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      else {
+        return FlutterMap(
+          options: MapOptions(
+            initialCenter: LatLng(_userLocation!.latitude, _userLocation!.longitude),
+            initialZoom: 13.0,
+          ),
+          children: [
+            _buildTileLayer(),
+            _buildMarkerLayer([
+              Marker(
+                point: LatLng(_userLocation!.latitude, _userLocation!.longitude),
+                width: 30.0,
+                height: 30.0,
+                child: const Icon(Icons.location_pin, color: Colors.red),
+              ),
+            ]),
+          ],
+        );
+      }
+    }
+    else if (_locationLatLng != null ) {
+      return FlutterMap(
+        options: MapOptions(
+          initialCenter: LatLng(_locationLatLng!.latitude, _locationLatLng!.longitude),
+          initialZoom: 13.0,
+        ),
+        children: [
+          _buildTileLayer(),
+          _buildMarkerLayer([
+            Marker(
+              point: LatLng(_locationLatLng!.latitude, _locationLatLng!.longitude),
+              width: 30.0,
+              height: 30.0,
+              child: const Icon(Icons.location_pin, color: Colors.red),
+            ),
           ]),
         ],
       );

@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:taxi_reservation/models/Reservation.dart';
 
-class RideHistoryScreen extends StatelessWidget {
-  const RideHistoryScreen({super.key});
+import '../models/User.dart';
 
-  final String userId = '1';
+class RideHistoryScreen extends StatelessWidget {
+
+  final String userId = User.getInstance().userId;
 
   @override
   Widget build(BuildContext context) {
