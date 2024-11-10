@@ -68,13 +68,6 @@ class HomeScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.directions_car),
-              title: const Text('map'),
-              onTap: () {
-                Navigator.pushNamed(context, '/Map');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.directions_car),
               title: const Text('Weather'),
               onTap: () {
                 Navigator.pushNamed(context, '/Weather');

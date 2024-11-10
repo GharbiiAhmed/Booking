@@ -102,18 +102,53 @@ class _OngoingReservationsScreenState extends State<OngoingReservationsScreen> {
 
         if (docSnapshot.exists) {
           await docRef.update({'state': 'Canceled'});
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Reservation canceled successfully.')),
+
+          // Success pop-up dialog
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Success'),
+              content: const Text('Reservation canceled successfully.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Reservation not found.')),
+          // Reservation not found pop-up dialog
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Error'),
+              content: const Text('Reservation not found.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           );
         }
       } catch (e) {
         print("Error: $e");
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to cancel reservation.')),
+
+        // Failed to cancel reservation pop-up dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Failed to cancel reservation.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
       }
     }

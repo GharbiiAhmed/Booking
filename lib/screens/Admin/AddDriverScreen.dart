@@ -96,8 +96,21 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
           .doc(driver.driverId)
           .set(driver.toMap());
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Driver added successfully!')),
+      // Show a pop-up dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Success'),
+          content: Text('Driver added successfully!'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('OK'),
+            ),
+          ],
+        ),
       );
 
       _nameController.clear();

@@ -1,10 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:taxi_reservation/screens/Admin/AllDriversScreen.dart';
 import 'package:taxi_reservation/screens/Admin/AllVehiculesScreen.dart';
 import 'package:taxi_reservation/screens/WeatherScreen.dart';
-import 'package:taxi_reservation/screens/sub.dart';
 import 'screens/home_screen.dart';
 import 'screens/booking_screen.dart';
 import 'screens/confirmation_screen.dart';
@@ -13,12 +11,10 @@ import 'screens/ongoingreservations_screen.dart';
 import 'screens/Admin/AddDriverScreen.dart';
 import 'screens/Admin/AddVehicleScreen.dart';
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  String ACCESS_TOKEN = String.fromEnvironment("ACCESS_TOKEN");
-  MapboxOptions.setAccessToken(ACCESS_TOKEN);
+
   runApp(const TaxiReservationApp());
 }
 
@@ -44,7 +40,6 @@ class TaxiReservationApp extends StatelessWidget {
         '/addDriver' : (context) => const AddDriverScreen(),
         '/AllVehicules' : (context) => const AllVehiculesScreen(),
         '/AllDrivers' : (context) => const AllDriversScreen(),
-        '/Map' : (context) => MapsPage(),
         '/Weather' : (context) => WeatherScreen()
 
       },

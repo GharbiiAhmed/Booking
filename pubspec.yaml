@@ -16,15 +16,16 @@ dependencies:
   cupertino_icons: ^1.0.8
   image_picker: ^0.8.5+3
   firebase_storage: ^11.6.5
-  mapbox_maps_flutter: ^2.3.0
   pdf: ^3.6.0
   permission_handler: ^11.3.1
   path_provider: ^2.0.10
   device_info_plus: ^11.1.0
-  flutter_map: ^6.1.0
-  latlong2:
-  animate_do:
-
+  flutter_map: ^7.0.2
+  geolocator: ^9.0.0
+  flutter_polyline_points: ^2.1.0
+  flutter_map_marker_cluster: ^1.4.0
+  http: ^1.2.1
+  geocoding: ^2.0.0
 
 
 dev_dependencies:
