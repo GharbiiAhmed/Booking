@@ -246,7 +246,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                                                   'airline': offer['airline'] ?? 'Unknown Airline',
                                                   'price': offer['price'] ?? 0.0,
                                                   'tripType': offer['tripType'] ?? 'Unknown',
-                                                },
+                                                }, flight: {},
                                               ),
                                             ),
                                           );

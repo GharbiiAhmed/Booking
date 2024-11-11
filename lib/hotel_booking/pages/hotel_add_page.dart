@@ -20,9 +20,9 @@ class _AddHotelScreenState extends State<AddHotelScreen> {
   final _ratingController = TextEditingController();
   final _reviewsController = TextEditingController();
   final _distanceController = TextEditingController();
-  String? _imageUrl;
+  String? _imageUrl = '';
   File? _image;
-  late LatLng selectedLocation;
+  late LatLng selectedLocation = LatLng(36.8065, 10.1815);
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -180,11 +180,11 @@ class _AddHotelScreenState extends State<AddHotelScreen> {
         'perNight': double.parse(_priceController.text),
         'rating': double.parse(_ratingController.text),
         'reviews': int.parse(_reviewsController.text),
-        'imagePath': _imageUrl,
+        'imagePath': _imageUrl ?? '',
         'dist': double.parse(_distanceController.text),
         // Save latitude and longitude as part of the hotel data
-        'latitude': selectedLocation.latitude,
-        'longitude': selectedLocation.longitude,
+        'latitude': selectedLocation.latitude ?? '',
+        'longitude': selectedLocation.longitude ?? '',
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hotel added successfully!')),

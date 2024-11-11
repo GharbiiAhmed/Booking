@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:taxi_reservation/models/User.dart';
 import 'package:taxi_reservation/screens/Flight/FlightAdmin/admindashboard.dart';
+import 'package:taxi_reservation/screens/Flight/flightsearch.dart';
 import 'package:taxi_reservation/screens/Vehicle/Admin/AddDriverScreen.dart';
 import 'package:taxi_reservation/screens/Vehicle/Admin/AddVehicleScreen.dart';
 import 'package:taxi_reservation/screens/Vehicle/Admin/AllDriversScreen.dart';
@@ -77,9 +78,9 @@ class _NavigationHomeScreenState extends State<NavigationHomeScreen> {
               screenView = RideHistoryScreen();
             });
             break;
-          case DrawerIndex.Help:
+          case DrawerIndex.FlightScreen:
             setState(() {
-              screenView = HelpScreen();
+              screenView = FlightSearchScreen();
             });
             break;
           case DrawerIndex.FeedBack:
@@ -119,11 +120,6 @@ class _NavigationHomeScreenState extends State<NavigationHomeScreen> {
               screenView = AdminDashboard();
             });
             break;
-          case DrawerIndex.AddVehicle:
-            setState(() {
-              screenView = AddVehicleScreen();
-            });
-            break;
           case DrawerIndex.AllDrivers:
             setState(() {
               screenView = AllDriversScreen();
@@ -139,6 +135,8 @@ class _NavigationHomeScreenState extends State<NavigationHomeScreen> {
               screenView = FeedbackScreen();
             });
             break;
+
+
           default:
             break;
         }

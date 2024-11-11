@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:taxi_reservation/models/User.dart';
+import 'package:taxi_reservation/screens/Vehicle/Confirmation_Screen.dart';
 import '../../models/ReservationV.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
@@ -69,16 +70,9 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
   Future<void> _submitBooking() async {
     String driverId = '';
     String? vehicleId;
-    if (_selectedDriverDetails != null) {
-      driverId = _selectedDriverDetails!['id'];
-    } else {
-      print('Driver not selected');
-    }
-    if (_selectedCarDetails != null) {
-      vehicleId = _selectedCarDetails!['id'];
-    } else {
-      print('vehicle not selected');
-    }
+    driverId = _selectedDriverDetails != null ? _selectedDriverDetails!['id'] : '';
+    vehicleId = _selectedCarDetails != null ? _selectedCarDetails!['id'] : '';
+
     final _bookingData = ReservationV(
       reservationId:
           FirebaseFirestore.instance.collection('reservationsV').doc().id,
@@ -958,7 +952,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
                 try {
                   _submitBooking();
 
-                  Navigator.pushNamed(context, '/confirmation');
+                  MaterialPageRoute(builder: (context) => ConfirmationScreen());
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Failed to book vehicle: $e')),

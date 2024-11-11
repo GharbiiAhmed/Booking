@@ -1,14 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
 import '../../models/User.dart';
 import '../../services/FlightFirebase/firebase_service.dart';
+import 'flightpayment.dart';
 import 'flightseatselection.dart';
 
 class BookingScreen extends StatefulWidget {
   final Map<String, dynamic> flightDetails;
 
-  BookingScreen({required this.flightDetails});
+  // Constructor that only takes flightDetails as a parameter
+  BookingScreen({required this.flightDetails, required Map flight});
 
   @override
   _BookingScreenState createState() => _BookingScreenState();
@@ -18,8 +19,7 @@ class _BookingScreenState extends State<BookingScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController passportController = TextEditingController();
   String? selectedSeat;
-  final FirebaseService _firebaseService = FirebaseService(); // Initialize FirebaseService
-  //final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseService _firebaseService = FirebaseService();
 
   @override
   Widget build(BuildContext context) {
@@ -119,22 +119,20 @@ class _BookingScreenState extends State<BookingScreen> {
                     _saveBookingToFirestore();
 
                     // Navigate to payment screen with flight and booking details
-                    Navigator.pushNamed(
-                      context,
-                      '/payment',
-                      arguments: {
-                        'flightNumber': widget.flightDetails['flightNumber'] ?? 'N/A',
-                        'origin': origin,
-                        'destination': destination,
-                        'price': price,
-                        'name': nameController.text,
-                        'passport': passportController.text,
-                        'seat': selectedSeat ?? 'No seat selected',
-                        'tripType': widget.flightDetails['tripType'] ?? 'One Way',
-                        'departureDate': widget.flightDetails['departureDate'],
-                        'returnDate': widget.flightDetails['tripType'] == 'Round Trip' ? widget.flightDetails['returnDate'] : null,
-                      },
-                    );
+                    if (widget.flightDetails.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Flight details are missing')),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PaymentScreen(
+                            flightDetails: widget.flightDetails, // Ensure you pass flightDetails
+                          ),
+                        ),
+                      );
+                    }
                   }
                 },
                 child: Text('Proceed to Payment'),

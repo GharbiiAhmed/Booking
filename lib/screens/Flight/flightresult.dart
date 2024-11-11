@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:taxi_reservation/screens/Flight/flightbooking.dart';
 import '../../services/FlightFirebase/firebase_service.dart';
 
 class FlightResultsScreen extends StatefulWidget {
@@ -130,8 +130,16 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         ],
                       ),
                       onTap: () {
-                        // Navigate to the booking screen with selected flight details
-                        Navigator.pushNamed(context, '/booking', arguments: flight);
+                        // Pass flight details to the booking screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BookingScreen(
+                              flight: flight,
+                              flightDetails: flight, // Pass the whole flight object
+                            ),
+                          ),
+                        );
                       },
                     ),
                   );

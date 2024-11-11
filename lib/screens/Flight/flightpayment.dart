@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 
 class PaymentScreen extends StatefulWidget {
@@ -268,11 +269,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       // Convert to PDF bytes and print the PDF
       final pdfBytes = await pdf.save();
-      //await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdfBytes);
+
+      // Uncomment the line below if you want to print the PDF directly
+      // Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdfBytes);
+
+      // To save the PDF file (if you want to save it instead of printing):
+      await Printing.sharePdf(bytes: pdfBytes, filename: 'payment_receipt.pdf');
     } catch (e) {
       print("Error generating PDF: $e");
     }
   }
+
 
   pw.Table _buildTable(List<List<String>> data) {
     return pw.Table.fromTextArray(

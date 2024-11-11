@@ -39,8 +39,8 @@ class MyApp extends StatelessWidget {
         textTheme: AppTheme.textTheme,
         platform: TargetPlatform.iOS,
       ),
-      home: MyHomePage(),
-      //home: LoginScreen(),
+      // home: MyHomePage(),
+      home: LoginScreen(),
     );
   }
 }
