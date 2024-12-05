@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../models/User.dart';
 import '../../models/reservation.dart';
 import '../../models/hotel.dart';
 import '../../services/Hotel/reservation_service.dart';
@@ -24,7 +26,9 @@ class _BookingPageState extends State<BookingPage> {
 
   // Calculate total price based on selected options
   double get totalPrice {
-    int nights = (checkOutDate?.difference(checkInDate!).inDays ?? 0);
+    int nights = (checkOutDate
+        ?.difference(checkInDate!)
+        .inDays ?? 0);
     return nights > 0 ? nights * roomCount * widget.hotel.perNight : 0.0;
   }
 
@@ -85,16 +89,37 @@ class _BookingPageState extends State<BookingPage> {
     print('Total Price: \$${totalPrice.toStringAsFixed(2)}');
 
     Reservation newReservation = Reservation(
-        hotelId: widget.hotel.id,
-        userId: "1",
-        startDate: checkInDate!.toLocal(),
-        endDate: checkOutDate!.toLocal(),
-        numberOfRooms: roomCount,
-        adults: adultCount,
-        kids: childCount,
-        total: totalPrice);
+      id: '',
+      // We will leave this empty as Firestore will generate it
+      hotelId: widget.hotel.id,
+      userId: User
+          .getInstance()
+          .userId,
+      startDate: checkInDate!.toLocal(),
+      endDate: checkOutDate!.toLocal(),
+      numberOfRooms: roomCount,
+      adults: adultCount,
+      kids: childCount,
+      total: totalPrice,
+    );
 
-    await reservationService.createReservation(newReservation);
+    await FirebaseFirestore.instance.collection('reservations').add({
+      'hotelId': newReservation.hotelId,
+      'userId': newReservation.userId,
+      'startDate': newReservation.startDate.toIso8601String(),
+      'endDate': newReservation.endDate.toIso8601String(),
+      'numberOfRooms': newReservation.numberOfRooms,
+      'adults': newReservation.adults,
+      'kids': newReservation.kids,
+      'total': newReservation.total,
+    }).then((docRef) {
+      // After adding the reservation to Firestore, get the generated document ID
+      newReservation.id =
+          docRef.id; // Get the document ID and assign it to the reservation
+    });
+
+// Now, you can pass the reservation object with the document ID set
+
     Navigator.pop(context);
   }
 
@@ -136,7 +161,8 @@ class _BookingPageState extends State<BookingPage> {
                         child: Text(
                           checkInDate == null
                               ? 'Select Check-in Date'
-                              : 'Check-in: ${DateFormat('yyyy-MM-dd').format(checkInDate!)}',
+                              : 'Check-in: ${DateFormat('yyyy-MM-dd').format(
+                              checkInDate!)}',
                           style: TextStyle(fontSize: 16),
                         ),
                       ),
@@ -157,7 +183,8 @@ class _BookingPageState extends State<BookingPage> {
                         child: Text(
                           checkOutDate == null
                               ? 'Select Check-out Date'
-                              : 'Check-out: ${DateFormat('yyyy-MM-dd').format(checkOutDate!)}',
+                              : 'Check-out: ${DateFormat('yyyy-MM-dd').format(
+                              checkOutDate!)}',
                           style: TextStyle(fontSize: 16),
                         ),
                       ),
@@ -171,7 +198,8 @@ class _BookingPageState extends State<BookingPage> {
             // Nights Count Display
             if (checkInDate != null && checkOutDate != null)
               Text(
-                'Total Nights: ${(checkOutDate!.difference(checkInDate!).inDays)}',
+                'Total Nights: ${(checkOutDate!.difference(checkInDate!)
+                    .inDays)}',
                 style: TextStyle(fontSize: 16),
               ),
             SizedBox(height: 10),

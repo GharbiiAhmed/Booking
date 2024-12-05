@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:taxi_reservation/hotel_booking/pages/ReservationScreen.dart';
+import 'package:taxi_reservation/hotel_booking/pages/hotel_add_page.dart';
 import 'package:taxi_reservation/models/User.dart';
 import 'package:taxi_reservation/screens/Flight/FlightAdmin/admindashboard.dart';
 import 'package:taxi_reservation/screens/Flight/flightsearch.dart';
@@ -68,6 +70,11 @@ class _NavigationHomeScreenState extends State<NavigationHomeScreen> {
               screenView = const MyHomePage();
             });
             break;
+          case DrawerIndex.HotelRes:
+            setState(() {
+              screenView = const ReservationScreen();
+            });
+            break;
           case DrawerIndex.OngoingVres:
             setState(() {
               screenView = const OngoingReservationsScreen();
@@ -105,9 +112,9 @@ class _NavigationHomeScreenState extends State<NavigationHomeScreen> {
               screenView = const MyHomePage();
             });
             break;
-          case DrawerIndex.AddDriver:
+          case DrawerIndex.AddHotel:
             setState(() {
-              screenView = const AddDriverScreen();
+              screenView = AddHotelScreen();
             });
             break;
           case DrawerIndex.AddVehicle:

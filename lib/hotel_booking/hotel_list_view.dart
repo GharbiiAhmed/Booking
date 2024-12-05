@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:taxi_reservation/hotel_booking/pages/hotel_details.dart';
-
 import '../models/hotel.dart';
 import 'hotel_app_theme.dart';
-
 
 class HotelListView extends StatelessWidget {
   const HotelListView({
@@ -21,18 +18,6 @@ class HotelListView extends StatelessWidget {
   final Hotel hotelData;
   final AnimationController? animationController;
   final Animation<double>? animation;
-
-  Future<String?> getFirebaseImageUrl(String imagePath) async {
-  try {
-    // Obtient l'URL de téléchargement de l'image depuis Firebase Storage
-    return await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
-  } catch (e) {
-    // En cas d'erreur, retourne null pour indiquer l'absence de l'image
-    print("Erreur lors de la récupération de l'image Firebase : $e");
-    return null;
-  }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -69,31 +54,35 @@ class HotelListView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16.0),
                   child: Column(
                     children: [
-                  FutureBuilder<String?>(
-  future: getFirebaseImageUrl(hotelData.imagePath), // Passez le chemin ici
-  builder: (context, snapshot) {
-    return AspectRatio(
-      aspectRatio: 2,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: FadeInImage(
-          placeholder: AssetImage('assets/fallback_image.png'),
-          image: snapshot.hasData && snapshot.data != null
-              ? NetworkImage(snapshot.data!) as ImageProvider
-              : AssetImage('assets/fallback_image.png'),
-          fit: BoxFit.cover,
-          imageErrorBuilder: (context, error, stackTrace) {
-            return Image.asset(
-              'assets/fallback_image.png', // Fallback en cas d'erreur
-              fit: BoxFit.cover,
-            );
-          },
-        ),
-      ),
-    );
-  },
-),
-
+                      // Use the appropriate image widget based on the image path type
+                      hotelData.imagePath.startsWith('http')
+                          ? AspectRatio(
+                        aspectRatio: 2,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: FadeInImage(
+                            placeholder: AssetImage('assets/fallback_image.png'),
+                            image: NetworkImage(hotelData.imagePath),
+                            fit: BoxFit.cover,
+                            imageErrorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/fallback_image.png', // Fallback in case of error
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          ),
+                        ),
+                      )
+                          : AspectRatio(
+                        aspectRatio: 2,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.asset(
+                            hotelData.imagePath, // Path to image in the assets folder
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
 
                       Container(
                         color: HotelAppTheme.buildLightTheme().canvasColor,

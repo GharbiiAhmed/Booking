@@ -1,9 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/User.dart';
 import '../../models/hotel.dart';
+import 'UpdateHotelPage.dart';
 import 'booking_page.dart';
 
 class HotelDetailsScreen extends StatefulWidget {
@@ -24,15 +27,32 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     _imageFuture = _getFirebaseImage(widget.hotelData.imagePath);
   }
 
-  
   Future<String?> _getFirebaseImage(String imagePath) async {
-    if (imagePath.isEmpty) return null;
+    // Check if the path is a local asset path
+    if (imagePath.startsWith('assets/')) {
+      return imagePath;
+    }
+
+    // Otherwise, treat it as a Firebase Storage path
     try {
       final ref = FirebaseStorage.instance.ref().child(imagePath);
       return await ref.getDownloadURL();
     } catch (e) {
       print("Error fetching Firebase image: $e");
       return null;
+    }
+  }
+
+
+  // Function to delete the hotel
+  Future<void> _deleteHotel() async {
+    try {
+      await FirebaseFirestore.instance.collection('hotels').doc(widget.hotelData.id).delete();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hotel deleted successfully')));
+      Navigator.pop(context); // Go back to the previous screen after deletion
+    } catch (e) {
+      print("Error deleting hotel: $e");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting hotel')));
     }
   }
 
@@ -48,22 +68,38 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // Cover Image with Fallback
               FutureBuilder<String?>(
                 future: _imageFuture,
                 builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+
+                  final imagePath = snapshot.data;
+                  if (imagePath == null) {
+                    return Container(
+                      height: 250,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage('assets/fallback_image.png'), // Fallback image
+                          fit: BoxFit.cover,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    );
+                  }
+
                   return Container(
                     height: 250,
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image: snapshot.hasData && snapshot.data != null
-                            ? NetworkImage(snapshot.data!)
-                            : AssetImage('assets/fallback_image.png') as ImageProvider,
+                        image: imagePath.startsWith('assets/')
+                            ? AssetImage(imagePath) // Load from local assets
+                            : NetworkImage(imagePath) as ImageProvider, // Load from Firebase
                         fit: BoxFit.cover,
                       ),
                       borderRadius: BorderRadius.circular(16),
-
                     ),
                   );
                 },
@@ -139,6 +175,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                           ),
                         ],
                       ),
+                      if (User.getInstance().role == "client")...[
                       const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
@@ -163,11 +200,40 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                           ),
                         ),
                       ),
+                    ]
                     ],
                   ),
                 ),
               ),
-              
+
+              // Add Update and Delete buttons for admin
+              if (User.getInstance().role == "admin") ...[
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UpdateHotelPage(hotel: widget.hotelData),
+                          ),
+                        );
+                      },
+                      child: const Text('Update Hotel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _deleteHotel,
+                      child: const Text('Delete Hotel'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
               // Mini Map with Navigation to Google Maps
               const SizedBox(height: 20),
               Text(
@@ -188,8 +254,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate:
-                          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                       subdomains: ['a', 'b', 'c'],
                     ),
                     MarkerLayer(

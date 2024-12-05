@@ -40,6 +40,16 @@ class _HomeDrawerState extends State<HomeDrawer> {
         imageName: 'assets/images/supportIcon.png',
       ),
       DrawerList(
+        index: DrawerIndex.AddHotel,
+        labelName: 'Add Hotels',
+        icon: Icon(Icons.home),
+      ),
+      DrawerList(
+        index: DrawerIndex.HotelRes,
+        labelName: 'Hotel Reservations',
+        icon: Icon(Icons.home),
+      ),
+      DrawerList(
         index: DrawerIndex.AddDriver,
         labelName: 'Add Driver',
         icon: Icon(Icons.help),
@@ -310,6 +320,8 @@ enum DrawerIndex {
   OngoingVres,
   RideHistory,
   AddVehicle,
+  AddHotel,
+  HotelRes,
   AddDriver,
   FlightScreen,
   AllDrivers,

@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import '../../home_screen.dart';
+import '../../navigation_home_screen.dart';
 import 'location_picker_screen.dart';
 
 class AddHotelScreen extends StatefulWidget {
@@ -24,29 +29,56 @@ class _AddHotelScreenState extends State<AddHotelScreen> {
   File? _image;
   late LatLng selectedLocation = LatLng(36.8065, 10.1815);
   Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-      _uploadImage();
-    }
-  }
-
-  Future<void> _uploadImage() async {
-    if (_image == null) return;
     try {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('hotels/${_image!.path.split('/').last}');
-      await storageRef.putFile(_image!);
-      String downloadUrl = await storageRef.getDownloadURL();
-      setState(() {
-        _imageUrl = downloadUrl;
-      });
+      final assetManifest = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = json.decode(assetManifest);
+
+      final assetList = manifestMap.keys
+          .where((path) => path.contains('assets/hotel/') &&
+          (path.endsWith('.png') || path.endsWith('.jpg')))
+          .toList();
+
+      if (assetList.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No images found in resources/drivers')),
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Select an image'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: assetList.map((assetPath) {
+                  return ListTile(
+                    leading: Image.asset(
+                      assetPath,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    ),
+                    title: Text(assetPath.split('/').last),
+                    onTap: () {
+                      setState(() {
+                        _imageUrl = assetPath;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+          );
+        },
+      );
     } catch (e) {
-      print("Image upload failed: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading images: $e')),
+      );
     }
   }
 
@@ -150,7 +182,7 @@ class _AddHotelScreenState extends State<AddHotelScreen> {
                   if (result != null) {
                     setState(() {
                       selectedLocation = result;
-                     
+
                     });
                   }
                 },
@@ -182,14 +214,18 @@ class _AddHotelScreenState extends State<AddHotelScreen> {
         'reviews': int.parse(_reviewsController.text),
         'imagePath': _imageUrl ?? '',
         'dist': double.parse(_distanceController.text),
-        // Save latitude and longitude as part of the hotel data
-        'latitude': selectedLocation.latitude ?? '',
-        'longitude': selectedLocation.longitude ?? '',
+        'latitude': selectedLocation.latitude ?? 0.0,
+        'longitude': selectedLocation.longitude ?? 0.0,
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hotel added successfully!')),
       );
-      Navigator.pop(context);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => NavigationHomeScreen(), // Replace with your desired screen
+        ),
+      );
+
     } catch (e) {
       print(e);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -197,4 +233,4 @@ class _AddHotelScreenState extends State<AddHotelScreen> {
       );
     }
   }
-} 
+}

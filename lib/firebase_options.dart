@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDSVc2pF2rU1V32HlXIPjKUzaH8FrGuBug',
-    appId: '1:639775533103:android:a42d5c8a9db435cd837eda',
-    messagingSenderId: '639775533103',
-    projectId: 'taxibooking-cf934',
-    storageBucket: 'taxibooking.firebasestorage.app',
+    apiKey: 'AIzaSyA64yzyoTCVz0HLwlU54R_Glf-ZSXLLgQM',
+    appId: '1:948561776724:android:2611477520855e1c8bddc1',
+    messagingSenderId: '948561776724',
+    projectId: 'booking-16fa6',
+    storageBucket: 'booking-16fa6.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDSVc2pF2rU1V32HlXIPjKUzaH8FrGuBug',
-    appId: '1:639775533103:android:a42d5c8a9db435cd837eda',
-    messagingSenderId: '639775533103',
-    projectId: 'taxibooking-cf934',
-    storageBucket: 'taxibooking.firebasestorage.app',
+    apiKey: 'AIzaSyA64yzyoTCVz0HLwlU54R_Glf-ZSXLLgQM',
+    appId: '1:948561776724:android:2611477520855e1c8bddc1',
+    messagingSenderId: '948561776724',
+    projectId: 'booking-16fa6',
+    storageBucket: 'booking-16fa6.firebasestorage.app',
     iosBundleId: 'com.example.bestFlutterUiTemplates',
   );
 }

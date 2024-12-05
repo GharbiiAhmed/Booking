@@ -499,15 +499,7 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
                       borderRadius: const BorderRadius.all(
                         Radius.circular(32.0),
                       ),
-                      onTap: () {
-                        print(' tapped like ');
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AddHotelScreen(),
-                          ),
-                        );
-                      },
+
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Icon(Icons.favorite_border),

@@ -1,0 +1,1 @@
+ C:\\flutterprojects\\Booking\\.dart_tool\\flutter_build\\1187d8cfa55e036b2a1b578f606acc72\\native_assets.yaml: 

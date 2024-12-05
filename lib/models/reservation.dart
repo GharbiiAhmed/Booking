@@ -1,6 +1,8 @@
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Reservation {
-  String? id;
+  String id;
   String hotelId;
   String userId;
   DateTime startDate;
@@ -11,7 +13,7 @@ class Reservation {
   double total;
 
   Reservation({
-    this.id,
+    required this.id,
     required this.hotelId,
     required this.userId,
     required this.startDate,
@@ -24,6 +26,7 @@ class Reservation {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'hotelId': hotelId,
       'userId': userId,
       'startDate': startDate.toIso8601String(),
@@ -37,7 +40,7 @@ class Reservation {
 
   static Reservation fromMap(String id, Map<String, dynamic> map) {
     return Reservation(
-      id: id,
+      id: id,  // Directly use the provided id
       hotelId: map['hotelId'],
       userId: map['userId'],
       startDate: DateTime.parse(map['startDate']),
